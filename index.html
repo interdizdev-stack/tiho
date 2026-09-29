@@ -9,123 +9,49 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
-    <a class="skip-link" href="#main-content">Перейти к содержанию</a>
+
+    <a class="skip-link" href="#home">Перейти к истории</a>
     <header class="site-header">
-      <a class="wordmark" href="#home" aria-label="Тише — на главную">тише<span>.</span></a>
-      <nav class="desktop-nav" aria-label="Основная навигация">
-        <a href="#about">Обо мне</a>
-        <a href="#requests">С чем я помогаю</a>
-        <a href="#sessions">Наши встречи</a>
-      </nav>
+      <a class="wordmark" href="#home" data-step-target="0" aria-label="Тише — на главную">тише<span>.</span></a>
+      <nav class="desktop-nav" aria-label="Основная навигация"><a href="#about" data-step-target="3">Обо мне</a><a href="#requests" data-step-target="1">С чем я помогаю</a><a href="#sessions" data-step-target="7">Наши встречи</a></nav>
       <button class="button button-outline header-cta" data-book>Давайте знакомиться <span class="button-dot"></span></button>
       <button class="menu-toggle" aria-label="Открыть меню" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span></button>
-      <nav id="mobile-menu" class="mobile-menu" aria-label="Мобильная навигация" inert>
-        <a href="#about">Обо мне</a><a href="#requests">С чем я помогаю</a><a href="#sessions">Наши встречи</a><button class="button" data-book>Давайте знакомиться</button>
-      </nav>
+      <nav id="mobile-menu" class="mobile-menu" aria-label="Мобильная навигация" inert><a href="#about" data-step-target="3">Обо мне</a><a href="#requests" data-step-target="1">С чем я помогаю</a><a href="#sessions" data-step-target="7">Наши встречи</a><a href="#questions" data-step-target="8">Вопросы</a><button class="button" data-book>Давайте знакомиться</button></nav>
     </header>
 
-    <main id="main-content">
-      <section id="home" class="story" aria-label="История первой встречи с психологом">
-        <div class="story-stage">
-          <div class="story-wash" aria-hidden="true"></div>
-          <div class="scene-wrap">
-            <canvas id="room-canvas" role="img" aria-label="Мультяшный кабинет психолога. При прокрутке клиент входит, садится в кресло и начинает разговор."></canvas>
-            <div class="scene-loading"><span class="loading-orbit"></span><span>Впускаем немного света…</span></div>
-            <div class="scene-fallback" hidden><span>Здесь можно выдохнуть.</span><p>Представьте светлый кабинет, два удобных кресла и разговор, в котором вас слышат.</p></div>
-            <span class="scene-note">маленькая история большого шага</span>
-            <span class="scene-caption" aria-hidden="true">Можно просто прийти.</span>
-          </div>
-          <div class="hero-copy story-copy" data-chapter="0">
-            <div class="eyebrow"><span class="small-sun" aria-hidden="true">✳</span> Пространство бережной психотерапии</div>
-            <h1>Здесь можно<br>быть <em>собой.</em></h1>
-            <p class="hero-description">Даже когда внутри всё запуталось.<br>Вместе найдём то, на что можно опереться.</p>
-            <button class="button button-primary" data-book>Сделать первый шаг <span class="button-dot"></span></button>
-            <div class="hero-meta"><span>Онлайн и в уютном кабинете</span><i></i><span>В вашем темпе</span></div>
-          </div>
-          <article class="chapter-copy story-copy" data-chapter="1" aria-hidden="true" inert>
-            <div class="eyebrow">01 / Первый шаг</div>
-            <h2>Не нужно знать,<br><em>с чего начать.</em></h2>
-            <p>Можно прийти с тревогой, с усталостью или просто с ощущением: «Что-то не так». Для начала этого достаточно.</p>
-            <span class="chapter-aside">Вы уже сделали важное — пришли.</span>
-          </article>
-          <article class="chapter-copy story-copy" data-chapter="2" aria-hidden="true" inert>
-            <div class="eyebrow">02 / Место для вас</div>
-            <h2>Устраивайтесь.<br><em>Здесь вас слышат.</em></h2>
-            <p>Не придётся быть удобным, подбирать правильные слова или держаться из последних сил. Можно говорить. Можно молчать.</p>
-            <span class="chapter-aside">Без оценок. С вниманием к вам.</span>
-          </article>
-          <article class="chapter-copy story-copy" data-chapter="3" aria-hidden="true" inert>
-            <div class="eyebrow">03 / Распутываем вместе</div>
-            <h2>У каждого чувства<br>есть <em>своя история.</em></h2>
-            <p>Постепенно замечаем, что тревожит, где больно и чего хочется на самом деле. Разбираемся вместе — по одной ниточке.</p>
-            <span class="chapter-aside">Не торопить. Не исправлять. Понимать.</span>
-          </article>
-          <article class="chapter-copy story-copy" data-chapter="4" aria-hidden="true" inert>
-            <div class="eyebrow">04 / Свой ритм</div>
-            <h2>Больше опоры.<br>Больше <em>себя.</em></h2>
-            <p>Изменения не всегда громкие. Иногда это возможность сказать «нет», попросить поддержки или наконец услышать себя.</p>
-            <button class="button button-primary" data-book>Познакомиться с психологом <span class="button-dot"></span></button>
-          </article>
-          <div class="story-bottom">
-            <a class="scroll-invitation" href="#story-start"><span class="scroll-mouse" aria-hidden="true"></span><span>Листайте — история оживает</span></a>
-            <div class="chapter-nav" aria-label="Этапы истории">
-              <button data-goto="0" class="is-active" aria-label="Начало истории" aria-current="step"><span>01</span><i></i><span class="chapter-label">Первый шаг</span></button>
-              <button data-goto="0.37" aria-label="Перейти к разговору"><span>02</span><i></i><span class="chapter-label">Знакомство</span></button>
-              <button data-goto="0.61" aria-label="Перейти к чувствам"><span>03</span><i></i><span class="chapter-label">Понимание</span></button>
-              <button data-goto="0.86" aria-label="Перейти к завершению"><span>04</span><i></i><span class="chapter-label">Своя опора</span></button>
-            </div>
-            <button class="motion-toggle" aria-pressed="false" title="Включить спокойный режим"><span class="motion-symbol" aria-hidden="true">Ⅱ</span><span class="motion-label">Меньше движения</span></button>
-          </div>
-          <div class="story-progress" aria-hidden="true"><span></span></div>
-        </div>
-        <span id="story-start" class="story-start-anchor" aria-hidden="true"></span>
-      </section>
+    <div class="film-background" aria-hidden="true"><span class="ambient-halo"></span></div>
+    <div class="film-visual" aria-label="Непрерывная история встречи">
+      <div class="scene-wrap"><canvas id="room-canvas" role="img" aria-label="Анимированный кабинет психолога: история продолжается через все разделы, а в финале кабинет раскрывается в сад."></canvas><div class="scene-loading"><span class="loading-orbit"></span><span>История начинается…</span></div><div class="scene-fallback" hidden><span>Здесь можно быть собой.</span><p>От первого знакомства до своего следующего шага — мы рядом.</p></div></div>
+      <div class="film-frame-label"><span class="frame-symbol">◌</span><span id="scene-place">Кабинет. Начало истории.</span></div>
+      <div class="scene-caption" aria-hidden="true">Можно просто прийти.</div>
+    </div>
 
-      <section class="intro section-padding" id="requests">
-        <div class="section-top"><span class="eyebrow">01 — С чем можно прийти</span><span class="section-note">Вам не обязательно справляться в одиночку</span></div>
-        <div class="intro-heading reveal"><h2>Для всего, что вы<br><em>чувствуете.</em></h2><p>Не бывает «недостаточно серьёзных» причин.<br>Если вам непросто — это уже повод<br>позаботиться о себе.</p></div>
-        <div class="request-list">
-          <button class="request-row reveal" data-topic="Тревога и напряжение"><span class="row-index">01</span><span class="request-name">Когда тревога не отпускает</span><span class="request-detail">Мысли по кругу, напряжение, страх будущего</span><span class="row-plus">+</span></button>
-          <button class="request-row reveal" data-topic="Усталость и выгорание"><span class="row-index">02</span><span class="request-name">Когда сил всё меньше</span><span class="request-detail">Выгорание, усталость, потеря интереса</span><span class="row-plus">+</span></button>
-          <button class="request-row reveal" data-topic="Отношения и границы"><span class="row-index">03</span><span class="request-name">Когда сложно с близкими</span><span class="request-detail">Отношения, одиночество, личные границы</span><span class="row-plus">+</span></button>
-          <button class="request-row reveal" data-topic="Самооценка и поиск себя"><span class="row-index">04</span><span class="request-name">Когда потерялся контакт с собой</span><span class="request-detail">Самооценка, перемены, свои желания</span><span class="row-plus">+</span></button>
-        </div>
-        <p class="section-footnote">Не нашли своих слов? Можно начать именно с этого.</p>
-      </section>
+    <main id="main-content" class="narrative">
+      <section id="home" class="film-chapter hero-chapter" data-chapter="0" data-title="Первый шаг"><div class="chapter-copy"><span class="eyebrow"><span class="small-sun">✳</span> Пространство бережной психотерапии</span><h1>Здесь можно<br>быть <em>собой.</em></h1><p class="lead">Даже когда внутри всё запуталось.<br>Вместе найдём то, на что можно опереться.</p><button class="button button-primary" data-book>Сделать первый шаг <span class="button-dot"></span></button><div class="hero-meta">Онлайн и в уютном кабинете · В вашем темпе</div><a class="scroll-invitation" href="#requests" data-step-target="1"><span class="scroll-mouse"></span>Листайте. Эта история — о вас.</a></div></section>
 
-      <section class="about section-padding" id="about">
-        <div class="about-art" aria-hidden="true"><div class="about-circle"></div><div class="about-quote"><span>«</span>Вам не нужно<br>становиться кем-то,<br>чтобы заслужить<br><em>внимание.</em></div><span class="art-caption">Сначала — человек. Потом — всё остальное.</span></div>
-        <div class="about-content reveal"><span class="eyebrow">02 — Давайте познакомимся</span><h2>Я Анна.<br>И я <em>на вашей стороне.</em></h2><p class="lead">Психолог, с которым можно быть настоящим.</p><p>Для меня терапия — это встреча двух людей. Вы знаете свою жизнь изнутри, а я помогаю посмотреть на привычное под другим углом и услышать то, что долго оставалось в тени.</p><p>Я не выдаю готовых решений. Мы вместе ищем способы, которые подходят именно вам, и двигаемся в темпе, в котором вам достаточно безопасно.</p><div class="about-values"><span>Уважение к вашему опыту</span><span>Бережный диалог</span><span>Без осуждения</span></div><button class="text-button" data-book>Давайте познакомимся <span>↗</span></button></div>
-      </section>
+      <section id="requests" class="film-chapter" data-chapter="1" data-title="Что внутри"><div class="chapter-copy"><span class="eyebrow">01 — У каждой истории своё начало</span><h2>С чем бы вы<br><em>ни пришли.</em></h2><p>Тревога, усталость, отношения или ощущение, что вы потеряли себя. Не нужно заранее находить правильные слова.</p><div class="request-list"><button data-topic="Тревога и напряжение"><span>Тревога не отпускает</span><i>+</i></button><button data-topic="Усталость и выгорание"><span>Сил всё меньше</span><i>+</i></button><button data-topic="Отношения и границы"><span>С близкими непросто</span><i>+</i></button><button data-topic="Самооценка и поиск себя"><span>Хочется понять себя</span><i>+</i></button></div><span class="chapter-aside">Любое ваше чувство заслуживает внимания.</span></div></section>
 
-      <section class="breathing-section" aria-label="Небольшая пауза">
-        <div class="breathing-rings" aria-hidden="true"><span></span><span></span><span></span></div>
-        <div class="breathing-copy reveal"><span class="eyebrow">Маленькая пауза прямо сейчас</span><h2>А пока — просто<br><em>выдохните.</em></h2><p>Можно на мгновение никуда не спешить.</p><button class="breath-button" aria-pressed="false"><span class="breath-dot"></span><span>Побыть здесь 20 секунд</span></button><p class="breath-status" role="status" aria-live="polite"></p></div>
-        <span class="breathing-side-label">В своём темпе / Без спешки</span>
-      </section>
+      <section id="welcome" class="film-chapter" data-chapter="2" data-title="Знакомство"><div class="chapter-copy"><span class="eyebrow">02 — Устраивайтесь поудобнее</span><h2>Здесь не нужно<br><em>держать лицо.</em></h2><p>Можно волноваться. Смеяться не к месту. Не знать, с чего начать. Первая встреча — возможность почувствовать, как вам рядом со мной.</p><div class="quiet-lines"><span>Можно говорить</span><span>Можно молчать</span><span>Можно быть настоящим</span></div><span class="chapter-aside">Начнём там, где вы сейчас.</span></div></section>
 
-      <section class="sessions section-padding" id="sessions">
-        <div class="section-top"><span class="eyebrow">03 — Наши встречи</span><span class="section-note">Просто, понятно, по-человечески</span></div>
-        <div class="sessions-layout"><div class="session-intro reveal"><h2>Небольшой шаг.<br><em>Важная встреча.</em></h2><p>Первая сессия — возможность познакомиться, рассказать о себе и почувствовать, комфортно ли нам работать вместе.</p><div class="session-steps"><div><span>1</span><p>Вы оставляете заявку</p></div><div><span>2</span><p>Договариваемся об удобном времени</p></div><div><span>3</span><p>Встречаемся и знакомимся</p></div></div></div>
-        <div class="session-card reveal"><div class="card-top"><span class="eyebrow">Индивидуальная консультация</span><span class="small-sun" aria-hidden="true">✳</span></div><h3>Время для <em>себя.</em></h3><div class="session-price">4 000 <span>₽ / 50 минут</span></div><div class="session-formats"><span>Онлайн из любого места</span><span>Или очно в Москве</span></div><p>Внимание к вашему запросу. Понятные договорённости. Возможность решить, что делать дальше.</p><button class="button button-primary" data-book>Записаться на встречу <span class="button-dot"></span></button><small>Частоту встреч обсудим вместе.</small></div></div>
-      </section>
+      <section id="about" class="film-chapter" data-chapter="3" data-title="Ваш психолог"><div class="chapter-copy"><span class="eyebrow">03 — Давайте познакомимся</span><h2>Я Анна.<br>Я <em>на вашей стороне.</em></h2><p class="lead">Психолог, с которым можно быть настоящим.</p><p>Вы знаете свою жизнь изнутри. Я помогаю посмотреть на привычное под другим углом и услышать то, что долго оставалось в тени.</p><p>Я не выдаю готовых решений. Мы ищем то, что подходит именно вам.</p><div class="about-values"><span>Бережный диалог</span><span>Без осуждения</span><span>В вашем темпе</span></div></div></section>
 
-      <section class="faq section-padding" id="questions"><div class="faq-heading reveal"><span class="eyebrow">04 — До первой встречи</span><h2>Может быть,<br>вы <em>думаете…</em></h2><p>Немного ясности, чтобы сделать<br>первый шаг было легче.</p></div><div class="faq-list">
-        <details class="reveal"><summary>А если я не знаю, что говорить?<span>+</span></summary><p>Так бывает. Можно начать с того, как прошёл день, или сказать: «Я пока не знаю». Я помогу вопросами. Молчание и паузы тоже могут быть частью встречи.</p></details>
-        <details class="reveal"><summary>Как подготовиться к первой встрече?<span>+</span></summary><p>Специальная подготовка не нужна. Для онлайн-встречи найдите спокойное место, где вас не будут отвлекать, и проверьте связь. Если хотите, запишите то, о чём важно поговорить.</p></details>
-        <details class="reveal"><summary>Сколько встреч мне понадобится?<span>+</span></summary><p>Заранее точного числа нет. Это зависит от вашего запроса и обстоятельств. На первых встречах обсудим цели и будем вместе сверяться с тем, как вы себя чувствуете.</p></details>
-        <details class="reveal"><summary>Можно ли отказаться от продолжения?<span>+</span></summary><p>Да. Вы сами решаете, продолжать ли встречи. Важно, чтобы вам подходили и специалист, и формат. Об этом можно открыто поговорить.</p></details>
-        <details class="reveal"><summary>Что делать, если нужно перенести встречу?<span>+</span></summary><p>Напишите заранее, как только поймёте, что планы изменились. Условия переноса и отмены мы обсудим до первой оплаченной консультации.</p></details>
-      </div></section>
+      <section id="conversation" class="film-chapter" data-chapter="4" data-title="Разговор"><div class="chapter-copy"><span class="eyebrow">04 — Разбираемся вместе</span><h2>По одной<br><em>ниточке.</em></h2><p>За тревогой, злостью и растерянностью есть своя история. Мы постепенно замечаем, где больно, что повторяется и чего вам хочется на самом деле.</p><blockquote>Не торопить.<br>Не исправлять.<br><em>Понимать.</em></blockquote><span class="chapter-aside">Терапия — процесс, а не готовый ответ.</span></div></section>
 
-      <section class="closing section-padding"><span class="eyebrow reveal">Не обязательно начинать с правильных слов</span><h2 class="reveal">Можно начать<br>с простого <em>«привет».</em></h2><button class="button button-primary reveal" data-book>Привет, Анна <span class="button-dot"></span></button><p>Остальное мы обсудим вместе.</p><span class="closing-mark" aria-hidden="true">тише.</span></section>
+      <section id="pause" class="film-chapter breathing-section" data-chapter="5" data-title="Пауза"><div class="chapter-copy"><span class="eyebrow">05 — Для паузы тоже есть место</span><h2>Можно просто<br><em>выдохнуть.</em></h2><p>Необязательно всё время говорить или искать решение. Иногда важно немного побыть рядом с собой.</p><button class="breath-button" aria-pressed="false"><span class="breath-dot"></span><span>Побыть здесь 20 секунд</span></button><p class="breath-status" role="status" aria-live="polite"></p><span class="chapter-aside">У каждого — свой ритм.</span></div></section>
+
+      <section id="formats" class="film-chapter" data-chapter="6" data-title="Быть на связи"><div class="chapter-copy"><span class="eyebrow">06 — Близость не измеряется расстоянием</span><h2>Рядом.<br><em>Даже издалека.</em></h2><p>Можно встретиться в кабинете в Москве. А можно — из вашего дома, другого города или страны.</p><div class="format-cards"><div><span class="format-number">01</span><h3>В кабинете</h3><p>Два кресла, спокойное место и время только для вас.</p></div><div><span class="format-number">02</span><h3>Онлайн</h3><p>Уединённое пространство, наушники и стабильная связь.</p></div></div><span class="chapter-aside">Внимание к вам остаётся тем же.</span></div></section>
+
+      <section id="sessions" class="film-chapter" data-chapter="7" data-title="Время для себя"><div class="chapter-copy"><span class="eyebrow">07 — Простые договорённости</span><h2>Время<br><em>для себя.</em></h2><div class="session-price">4 000 <span>₽ / 50 минут</span></div><p>На первой встрече познакомимся, поговорим о вашем запросе и решим, как двигаться дальше.</p><div class="session-steps"><span><i>1</i>Оставляете заявку</span><span><i>2</i>Выбираем удобное время</span><span><i>3</i>Встречаемся и знакомимся</span></div><button class="button button-primary" data-book>Записаться на встречу <span class="button-dot"></span></button><small class="under-button">Частоту встреч обсудим вместе.</small></div></section>
+
+      <section id="questions" class="film-chapter questions-chapter" data-chapter="8" data-title="Ещё немного ясности"><div class="chapter-copy"><span class="eyebrow">08 — Можно спрашивать</span><h2>А если<br><em>я сомневаюсь?</em></h2><div class="faq-list"><details><summary>Если я не знаю, что говорить?<span>+</span></summary><p>Можно начать с «я пока не знаю». Я помогу вопросами. Паузы и молчание тоже могут быть частью встречи.</p></details><details><summary>Как подготовиться к встрече?<span>+</span></summary><p>Специальная подготовка не нужна. Для онлайн-встречи найдите спокойное место и проверьте связь. При желании запишите то, о чём важно поговорить.</p></details><details><summary>Сколько встреч понадобится?<span>+</span></summary><p>Заранее точного числа нет. Это зависит от вашего запроса и обстоятельств. Обсудим цели и будем вместе сверяться с тем, как вы себя чувствуете.</p></details><details><summary>Можно не продолжать?<span>+</span></summary><p>Да. Вы сами решаете, продолжать ли встречи. Важно, чтобы вам подходили и специалист, и формат.</p></details><details><summary>Если нужно перенести встречу?<span>+</span></summary><p>Напишите, как только поймёте, что планы изменились. Условия переноса и отмены обсудим до первой оплаченной консультации.</p></details></div></div></section>
+
+      <section id="next-step" class="film-chapter final-chapter" data-chapter="9" data-title="Ваша история дальше"><div class="chapter-copy"><span class="eyebrow">09 — История продолжается</span><h2>А дальше —<br><em>ваша жизнь.</em></h2><p>Со своими решениями, маленькими открытиями и правом быть собой. А первый шаг можно начать с простого «привет».</p><button class="button button-primary" data-book>Привет, Анна <span class="button-dot"></span></button><span class="chapter-aside">Остальное мы обсудим вместе.</span><footer class="final-meta"><a class="wordmark" href="#home" data-step-target="0">тише<span>.</span></a><button class="privacy-link">Конфиденциальность</button><small>© <span id="year">2026</span> · Пространство, в котором есть место вам.</small><small>Демонстрационный проект. Имя, формат и стоимость — примеры.</small><button class="replay-link" data-step-target="0">Посмотреть историю с начала</button></footer></div></section>
     </main>
 
-    <footer class="site-footer"><a class="wordmark" href="#home">тише<span>.</span></a><span>Пространство, в котором есть место вам.</span><button class="privacy-link">Конфиденциальность</button><span>© <span id="year">2026</span></span><small class="demo-note">Демонстрационный проект. Имя, формат и стоимость приведены как пример.</small></footer>
-
+    <div class="film-controls"><div class="chapter-readout"><span id="chapter-number">01</span><span class="readout-divider">/ 10</span><span id="chapter-title">Первый шаг</span></div><nav class="chapter-nav" aria-label="Главы истории"><button data-step-target="0" aria-label="Глава 1. Первый шаг" aria-current="step"></button><button data-step-target="1" aria-label="Глава 2. Что внутри"></button><button data-step-target="2" aria-label="Глава 3. Знакомство"></button><button data-step-target="3" aria-label="Глава 4. Ваш психолог"></button><button data-step-target="4" aria-label="Глава 5. Разговор"></button><button data-step-target="5" aria-label="Глава 6. Пауза"></button><button data-step-target="6" aria-label="Глава 7. Быть на связи"></button><button data-step-target="7" aria-label="Глава 8. Время для себя"></button><button data-step-target="8" aria-label="Глава 9. Вопросы"></button><button data-step-target="9" aria-label="Глава 10. Ваша история дальше"></button></nav><button class="motion-toggle" aria-pressed="false" aria-label="Включить спокойный режим"><span class="motion-symbol">Ⅱ</span><span class="motion-label">Меньше движения</span></button><div class="film-progress" aria-hidden="true"><span></span></div></div>
     <dialog class="contact-dialog" aria-labelledby="contact-title"><button class="dialog-close" aria-label="Закрыть форму">×</button><div class="form-view"><span class="eyebrow">Давайте начнём с знакомства</span><h2 id="contact-title">Ваш первый<br><em>маленький шаг.</em></h2><p>Оставьте контакт и удобный формат встречи.</p><form id="contact-form"><label>Как к вам обращаться<input name="name" autocomplete="given-name" required minlength="2" maxlength="80" placeholder="Ваше имя" /></label><label>Телефон, email или Telegram<input name="contact" autocomplete="email" required minlength="5" maxlength="160" placeholder="Как с вами связаться" /></label><fieldset><legend>Как вам удобнее?</legend><label class="format-option"><input type="radio" name="format" value="online" checked /><span>Онлайн</span></label><label class="format-option"><input type="radio" name="format" value="office" /><span>В кабинете</span></label><label class="format-option"><input type="radio" name="format" value="undecided" /><span>Пока не знаю</span></label></fieldset><label>О чём хотели бы поговорить <span class="optional">необязательно</span><textarea name="message" rows="2" maxlength="1200" placeholder="Можно написать пару слов, а можно оставить пустым"></textarea></label><label class="consent"><input type="checkbox" name="consent" required /><span>Согласен / согласна на обработку данных из формы для ответа на обращение.</span></label><p class="form-disclaimer" id="form-disclaimer"></p><p class="form-error" role="alert"></p><button type="submit" class="button button-primary">Отправить заявку <span class="button-dot"></span></button></form></div><div class="form-result" hidden><span class="result-symbol">✳</span><h2 id="result-title">Первый шаг<br><em>сделан.</em></h2><p id="result-description"></p><button class="button button-outline result-close">Вернуться на сайт</button></div></dialog>
     <dialog class="privacy-dialog" aria-labelledby="privacy-title"><button class="dialog-close" aria-label="Закрыть информацию">×</button><span class="eyebrow">О ваших данных</span><h2 id="privacy-title">Бережно<br>к <em>личному.</em></h2><p>В демонстрационном режиме данные формы не отправляются и не сохраняются. После подключения приёма заявок контакт будет использоваться для ответа на ваше обращение.</p><p>Не указывайте в форме медицинские сведения или подробности личных переживаний. Такие вопросы лучше обсудить непосредственно со специалистом.</p><p>Сайт сохраняет только выбранный режим анимации в этом браузере. Аналитика и рекламные cookies не используются.</p></dialog>
-    <noscript><div class="noscript-note">Для 3D-истории и формы включите JavaScript. Информация о встречах доступна ниже.</div></noscript>
+    <noscript><p class="noscript-note">Тексты и вопросы доступны без JavaScript. Для мультфильма и формы включите JavaScript.</p></noscript>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

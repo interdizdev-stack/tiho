@@ -81,15 +81,18 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   // Floating, cut-away architecture with a real silhouette, softly rounded edges.
   const stage = new THREE.Group();
   root.add(stage);
+  // The room opens like a little stage set in the final act.
+  const architecture = new THREE.Group();
+  stage.add(architecture);
   box(6.45, 0.22, 4.65, M.plaster, stage, [0, -0.16, 0], 0.18);
   box(6.37, 0.085, 4.57, M.ivory, stage, [0, -0.012, 0], 0.14);
   box(6.37, 0.035, 4.57, M.oakLight, stage, [0, -0.225, 0], 0.03);
   const plankMat = mat(0xc9b89a, 1, { transparent: true, opacity: 0.26 });
   for (let x = -2.8; x < 3; x += 0.57) box(0.008, 0.003, 4.3, plankMat, stage, [x, 0.034, 0], 0.001);
-  box(6.35, 2.86, 0.18, M.plaster, stage, [0, 1.43, -2.21], 0.08);
-  box(6.1, 0.095, 0.085, M.ivory, stage, [0, 0.15, -2.085], 0.015);
-  box(0.16, 2.86, 1.18, M.plaster, stage, [-3.11, 1.43, -1.7], 0.07);
-  box(0.15, 0.1, 1.12, M.ivory, stage, [-3.015, 0.15, -1.7], 0.02);
+  box(6.35, 2.86, 0.18, M.plaster, architecture, [0, 1.43, -2.21], 0.08);
+  box(6.1, 0.095, 0.085, M.ivory, architecture, [0, 0.15, -2.085], 0.015);
+  box(0.16, 2.86, 1.18, M.plaster, architecture, [-3.11, 1.43, -1.7], 0.07);
+  box(0.15, 0.1, 1.12, M.ivory, architecture, [-3.015, 0.15, -1.7], 0.02);
 
   // Rounded arched window, inset glazing and linen curtains.
   function archShape(width, height) {
@@ -104,7 +107,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   }
   const windowGroup = new THREE.Group();
   windowGroup.position.set(0.81, 0.64, -2.083);
-  stage.add(windowGroup);
+  architecture.add(windowGroup);
   const archFrame = mesh(new THREE.ExtrudeGeometry(archShape(1.58, 2.02), { depth: 0.065, bevelEnabled: true, bevelSegments: 3, steps: 1, bevelSize: 0.035, bevelThickness: 0.025, curveSegments: 30 }), M.ivory, windowGroup);
   const glass = mesh(new THREE.ShapeGeometry(archShape(1.35, 1.84), 30), mat(0xc2d8ce, 0.7, { emissive: 0xc6d6c5, emissiveIntensity: 0.12 }), windowGroup, [0, 0.09, 0.093]);
   glass.receiveShadow = false;
@@ -114,13 +117,13 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   box(0.045, 1.74, 0.045, M.ivory, windowGroup, [0, 0.98, 0.14], 0.01);
   box(1.3, 0.05, 0.045, M.ivory, windowGroup, [0, 0.89, 0.14], 0.01);
   box(1.86, 0.1, 0.29, M.ivory, windowGroup, [0, 0.025, 0.09], 0.035);
-  const rod = cylinder(0.018, 0.018, 2.14, M.oak, stage, [0.8, 2.74, -1.85]);
+  const rod = cylinder(0.018, 0.018, 2.14, M.oak, architecture, [0.8, 2.74, -1.85]);
   rod.rotation.z = Math.PI / 2;
   const linen = mat(0xe8c7a7, 0.97);
   for (const side of [-1, 1]) {
     const curtain = new THREE.Group();
     curtain.position.set(0.81 + side * 0.91, 1.76, -1.91);
-    stage.add(curtain);
+    architecture.add(curtain);
     for (let i = 0; i < 4; i++) {
       const panel = capsule(1.79 - i * 0.018, 0.077, linen, curtain, [side * (i - 1.5) * 0.091, 0, Math.sin(i * 1.7) * 0.035]);
       panel.scale.z = 0.62;
@@ -131,7 +134,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   // Gallery art: abstract landscape, physically layered into a wooden frame.
   const art = new THREE.Group();
   art.position.set(-1.53, 1.93, -2.055);
-  stage.add(art);
+  architecture.add(art);
   box(0.84, 1.03, 0.08, M.oakLight, art, [0, 0, 0], 0.025);
   box(0.73, 0.92, 0.016, M.white, art, [0, 0, 0.05], 0.008);
   sphere(0.15, M.terra, art, [0.125, 0.205, 0.065], [1, 1, 0.02]);
@@ -357,6 +360,104 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     peacefulLeaves.push(leaf);
   }
 
+  // Three little worries become visible while the visitor finds a seat.
+  const worries = new THREE.Group();
+  thoughts.add(worries);
+  const worryObjects = [];
+  for (let i = 0; i < 3; i++) {
+    const symbol = new THREE.Group();
+    worries.add(symbol);
+    worryObjects.push(symbol);
+    if (i === 0) {
+      for (let j = 0; j < 3; j++) sphere(0.095, M.blue, symbol, [(j - 1) * 0.12, j === 1 ? 0.06 : 0, 0], [1.05, 0.8, 0.55]);
+      for (let j = 0; j < 2; j++) capsule(0.08, 0.015, M.sage, symbol, [(j - 0.5) * 0.15, -0.16, 0]).rotation.z = -0.2;
+    } else if (i === 1) {
+      const zigzag = [[-0.07, 0.2, 0], [-0.14, 0, 0], [0.04, 0.025, 0], [-0.03, -0.17, 0]];
+      tube(zigzag, 0.032, M.yellow, symbol);
+    } else {
+      for (let j = 0; j < 2; j++) {
+        const loop = mesh(new THREE.TorusGeometry(0.14, 0.022, 7, 24), M.terra, symbol, [(j - 0.5) * 0.15, 0, 0]);
+        loop.rotation.y = j ? 0.6 : -0.6;
+      }
+    }
+  }
+
+  // Act seven: a real folding laptop, with a clay portrait on its screen.
+  const laptop = new THREE.Group();
+  laptop.position.set(0.22, 0.63, 0.45);
+  stage.add(laptop);
+  box(0.87, 0.055, 0.56, M.dark, laptop, [0, 0, 0], 0.025);
+  box(0.67, 0.01, 0.3, M.sage, laptop, [0, 0.032, -0.045], 0.016);
+  box(0.2, 0.008, 0.105, M.blue, laptop, [0, 0.038, 0.17], 0.01);
+  const laptopScreen = new THREE.Group();
+  laptopScreen.position.set(0, 0.025, -0.255);
+  laptop.add(laptopScreen);
+  box(0.87, 0.6, 0.065, M.dark, laptopScreen, [0, 0.3, 0], 0.045);
+  box(0.75, 0.49, 0.012, mat(0xc6d8c5, 0.7, { emissive: 0xadc8b5, emissiveIntensity: 0.18 }), laptopScreen, [0, 0.31, 0.042], 0.025);
+  sphere(0.052, M.dark, laptopScreen, [0, 0.583, 0.034], [0.2, 0.2, 0.2]);
+  const onlinePortrait = new THREE.Group();
+  onlinePortrait.position.set(0, 0.29, 0.065);
+  laptopScreen.add(onlinePortrait);
+  sphere(0.16, M.terra, onlinePortrait, [0, -0.085, 0], [1.1, 0.65, 0.13]);
+  sphere(0.1, M.skin, onlinePortrait, [0, 0.055, 0.016], [0.82, 1, 0.2]);
+  sphere(0.102, M.hair, onlinePortrait, [0, 0.106, 0.012], [0.85, 0.5, 0.21]);
+  for (const side of [-1, 1]) sphere(0.009, M.dark, onlinePortrait, [side * 0.032, 0.062, 0.038], [1, 1, 0.3]);
+  const connectionDot = sphere(0.026, M.olive, laptopScreen, [0.3, 0.12, 0.062], [1, 1, 0.25]);
+
+  // Act eight: time becomes tangible, without tiny unreadable labels.
+  const sessionClock = new THREE.Group();
+  sessionClock.position.set(0.12, 1.85, -0.07);
+  stage.add(sessionClock);
+  const clockFace = cylinder(0.42, 0.42, 0.085, M.ivory, sessionClock, [0, 0, 0], 48);
+  clockFace.rotation.x = Math.PI / 2;
+  mesh(new THREE.TorusGeometry(0.42, 0.022, 6, 48), M.oakLight, sessionClock, [0, 0, 0.045]);
+  for (let i = 0; i < 12; i++) {
+    const a = i / 12 * Math.PI * 2;
+    const tick = box(0.015, i % 3 ? 0.034 : 0.055, 0.014, M.olive, sessionClock, [Math.sin(a) * 0.34, Math.cos(a) * 0.34, 0.057], 0.004);
+    tick.rotation.z = -a;
+  }
+  const minuteHand = new THREE.Group();
+  const hourHand = new THREE.Group();
+  sessionClock.add(minuteHand, hourHand);
+  box(0.023, 0.3, 0.018, M.dark, minuteHand, [0, 0.12, 0.074], 0.008);
+  box(0.037, 0.2, 0.018, M.terra, hourHand, [0, 0.073, 0.093], 0.009);
+  sphere(0.035, M.yellow, sessionClock, [0, 0, 0.11], [1, 1, 0.45]);
+
+  // The last two acts transform the room into an open garden courtyard.
+  const garden = new THREE.Group();
+  stage.add(garden);
+  box(7.65, 0.16, 6.4, mat(0xc5cda9), garden, [0, -0.19, 0.05], 0.16);
+  box(7.5, 0.035, 6.26, mat(0xd6d9b9), garden, [0, -0.088, 0.05], 0.12);
+  const steppingStones = [];
+  for (let i = 0; i < 6; i++) {
+    const stone = cylinder(0.32, 0.36, 0.065, M.ivory, garden, [-0.74 + Math.sin(i * 0.63) * 0.35, 0.083, 0.5 + i * 0.44], 20);
+    stone.scale.z = 0.62;
+    stone.rotation.y = i * 0.6;
+    steppingStones.push(stone);
+  }
+  const gardenPlants = [plant(garden, [-3.21, -0.04, 1.58], 1.05), plant(garden, [3.1, -0.04, -2.12], 1.35)];
+  const gardenArch = new THREE.Group();
+  gardenArch.position.set(-0.18, 0, -2.42);
+  garden.add(gardenArch);
+  const archPoints = [[-1.02, 0.02, 0], [-1.02, 1.46, 0]];
+  for (let i = 0; i <= 18; i++) {
+    const a = Math.PI - i / 18 * Math.PI;
+    archPoints.push([Math.cos(a) * 1.02, 1.46 + Math.sin(a) * 1.02, 0]);
+  }
+  archPoints.push([1.02, 0.02, 0]);
+  tube(archPoints, 0.046, M.oakLight, gardenArch);
+  const archLeaves = [];
+  for (let i = 0; i < 14; i++) {
+    const a = Math.PI - i / 13 * Math.PI;
+    const leaf = sphere(0.13, i % 3 ? M.sage : M.yellow, gardenArch, [Math.cos(a) * 1.04, 1.48 + Math.sin(a) * 1.04, 0.025], [0.56, 1.24, 0.19]);
+    leaf.rotation.z = -a + (i % 2 ? 0.5 : -0.6);
+    archLeaves.push(leaf);
+  }
+  for (const [x, z, scale] of [[-2.8, -2.28, 0.7], [2.87, 2.31, 0.65], [-2.87, 2.35, 0.42]]) {
+    sphere(0.54, M.sage, garden, [x, 0.23, z], [scale, scale * 0.8, scale]);
+    sphere(0.4, M.olive, garden, [x + 0.27, 0.17, z + 0.08], [scale, scale * 0.7, scale]);
+  }
+
   // A contact shadow grounds the miniature without introducing a background plane.
   const shadowCanvas = document.createElement('canvas');
   shadowCanvas.width = shadowCanvas.height = 128;
@@ -377,12 +478,19 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   const mix = THREE.MathUtils.lerp;
   const cameraTarget = new THREE.Vector3();
   const lookAt = new THREE.Vector3();
+  const nextCamera = new THREE.Vector3();
   const keyframes = [
-    { p: 0, position: [7.6, 6.35, 10.8], target: [0, 1.06, 0] },
-    { p: 0.3, position: [6.1, 5.0, 10.6], target: [-0.16, 1.13, 0.08] },
-    { p: 0.52, position: [4.3, 4.4, 10.1], target: [0, 1.04, 0.12] },
-    { p: 0.76, position: [5.4, 5.6, 10.4], target: [0, 1.08, 0.06] },
-    { p: 1, position: [7.1, 6.1, 10.7], target: [0, 1.05, 0] },
+    { p: 0, position: [7.4, 6.15, 10.7], target: [0, 1.06, 0] },
+    { p: 0.13, position: [5.6, 5.0, 10.9], target: [-0.1, 1.08, 0.12] },
+    { p: 0.27, position: [4.4, 4.4, 10.0], target: [-0.12, 1.07, 0.25] },
+    { p: 0.36, position: [5.8, 4.4, 9.3], target: [0.3, 1.14, 0.15] },
+    { p: 0.46, position: [1.8, 3.8, 10.9], target: [0, 1.1, 0.2] },
+    { p: 0.55, position: [4.0, 5.8, 10.0], target: [0, 1.12, 0.25] },
+    { p: 0.65, position: [3.1, 4.4, 10.1], target: [0.05, 1.14, 0.3] },
+    { p: 0.76, position: [4.2, 4.6, 10.8], target: [0, 1.18, 0.16] },
+    { p: 0.855, position: [5.6, 5.4, 11.2], target: [0, 1.1, 0.3] },
+    { p: 0.93, position: [6.0, 6.4, 12.5], target: [0, 1.05, 0.42] },
+    { p: 1, position: [5.8, 6.9, 13.4], target: [0, 1.08, 0.4] },
   ];
   function poseSeated(actor, amount) {
     actor.legs.forEach(({ hip, knee }) => {
@@ -394,25 +502,46 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     if (disposed) return;
     const p = THREE.MathUtils.clamp(progress, 0, 1);
     const t = reducedMotion ? 0 : time;
-    const story = reducedMotion ? 0.94 : p;
-    const walking = smooth(0.06, 0.29, story);
-    const sitting = smooth(0.3, 0.41, story);
-    const talking = smooth(0.41, 0.46, story) * (1 - smooth(0.67, 0.79, story));
-    const calm = smooth(0.67, 0.9, story);
-    const walkStrength = smooth(0.065, 0.105, story) * (1 - smooth(0.255, 0.3, story));
-    const step = walking * Math.PI * 12;
-    // A curved route takes the visitor around the armrest; sitting moves them back into the cushion.
+    // All staging is a function of scroll, so scrubbing backwards restores the film.
+    // Quiet mode still visits every chapter; only continuous movement is stopped.
+    const walking = smooth(0.025, 0.19, p);
+    const sitDown = smooth(0.195, 0.26, p);
+    const gettingUp = smooth(0.815, 0.885, p);
+    const sitting = sitDown * (1 - gettingUp);
+    const welcome = smooth(0.25, 0.275, p) * (1 - smooth(0.315, 0.34, p));
+    const introduction = smooth(0.31, 0.335, p) * (1 - smooth(0.405, 0.43, p));
+    const talking = smooth(0.395, 0.42, p) * (1 - smooth(0.52, 0.555, p));
+    const calm = smooth(0.5, 0.595, p);
+    const breathing = smooth(0.51, 0.54, p) * (1 - smooth(0.605, 0.635, p));
+    const format = smooth(0.6, 0.635, p) * (1 - smooth(0.705, 0.735, p));
+    const terms = smooth(0.705, 0.735, p) * (1 - smooth(0.805, 0.83, p));
+    const reassuring = smooth(0.805, 0.825, p) * (1 - smooth(0.905, 0.93, p));
+    const gardenReveal = smooth(0.84, 0.962, p);
+    const leaving = smooth(0.885, 0.976, p);
+    const therapistUp = smooth(0.917, 0.966, p);
+    const waving = smooth(0.966, 0.991, p);
+    const entryStrength = smooth(0.026, 0.052, p) * (1 - smooth(0.17, 0.195, p));
+    const exitStrength = smooth(0.886, 0.904, p) * (1 - smooth(0.96, 0.98, p));
+    const walkStrength = reducedMotion ? 0 : entryStrength + exitStrength;
+    const step = (walking * 12 + leaving * 8) * Math.PI;
+    // A curved route passes the armrest, then a second route leads onto the garden path.
     const approachX = clientSeat.x + Math.sin(clientSeat.yaw) * 0.46;
     const approachZ = clientSeat.z + Math.cos(clientSeat.yaw) * 0.46;
     const before = 1 - walking;
     const routeX = before * before * -2.43 + 2 * before * walking * -2.52 + walking * walking * approachX;
     const routeZ = before * before * -0.56 + 2 * before * walking * 1.62 + walking * walking * approachZ;
     const direction = Math.atan2(before * (-2.52 + 2.43) + walking * (approachX + 2.52), before * (1.62 + 0.56) + walking * (approachZ - 1.62));
-    client.rig.position.set(mix(routeX, clientSeat.x, sitting), mix(1.04, 0.68, sitting) + Math.abs(Math.sin(step)) * 0.044 * walkStrength, mix(routeZ, clientSeat.z + 0.045, sitting));
-    client.rig.rotation.y = mix(direction, clientSeat.yaw + 0.13, smooth(0.21, 0.3, story));
-    client.torso.rotation.x = Math.sin(sitting * Math.PI) * 0.22 - talking * 0.04;
-    client.torso.rotation.z = Math.sin(t * 0.85) * 0.012;
-    client.torso.scale.y = 1 + Math.sin(t * 1.5) * 0.008 * (0.4 + calm);
+    const exitX = mix(approachX, -0.41, leaving) + Math.sin(leaving * Math.PI) * 0.13;
+    const exitZ = mix(approachZ, 2.45, leaving);
+    const chairX = mix(routeX, clientSeat.x, sitDown);
+    const chairZ = mix(routeZ, clientSeat.z + 0.045, sitDown);
+    client.rig.position.set(mix(chairX, exitX, gettingUp), mix(1.04, 0.68, sitting) + Math.abs(Math.sin(step)) * 0.044 * walkStrength, mix(chairZ, exitZ, gettingUp));
+    const seatedYaw = clientSeat.yaw + 0.13;
+    const exitYaw = mix(0.26, 0.76, waving);
+    client.rig.rotation.y = mix(mix(direction, seatedYaw, smooth(0.16, 0.215, p)), exitYaw, smooth(0.871, 0.905, p));
+    client.torso.rotation.x = Math.sin(sitting * Math.PI) * 0.19 - talking * 0.05 + gettingUp * (1 - gettingUp) * 0.38;
+    client.torso.rotation.z = Math.sin(t * 0.85) * 0.012 * (1 - walkStrength);
+    client.torso.scale.y = 1 + Math.sin(t * (breathing ? 1.25 : 1.5)) * (0.008 + breathing * 0.016);
     poseSeated(client, sitting);
     client.legs.forEach(({ hip, knee }, i) => {
       const phase = step + i * Math.PI;
@@ -422,39 +551,110 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     client.arms.forEach(({ shoulder, elbow }, i) => {
       const side = i === 0 ? -1 : 1;
       const phase = step + (i + 1) * Math.PI;
-      shoulder.rotation.x = Math.sin(phase) * 0.34 * walkStrength - sitting * 0.31 - talking * (0.16 + Math.sin(t * 1.9 + i * 2.1) * 0.18);
-      shoulder.rotation.z = side * (0.09 + talking * (0.26 + Math.sin(t * 1.4 + i) * 0.12));
-      elbow.rotation.x = -sitting * 0.92 - talking * (0.17 + Math.sin(t * 2 + i) * 0.28);
-      elbow.rotation.z = side * talking * 0.14;
+      shoulder.rotation.x = Math.sin(phase) * 0.34 * walkStrength - sitting * 0.31 - talking * (0.24 + Math.sin(t * 1.9 + i * 2.1) * 0.2) - reassuring * 0.12;
+      shoulder.rotation.z = side * (0.09 + talking * (0.27 + Math.sin(t * 1.4 + i) * 0.12) + welcome * 0.1);
+      elbow.rotation.x = -sitting * 0.92 - talking * (0.2 + Math.sin(t * 2 + i) * 0.28);
+      elbow.rotation.z = side * (talking * 0.14 + breathing * 0.06);
+      if (i === 1) {
+        shoulder.rotation.z = mix(shoulder.rotation.z, 2.3 + Math.sin(t * 2.7) * 0.16, waving);
+        shoulder.rotation.x = mix(shoulder.rotation.x, -0.15, waving);
+        elbow.rotation.x = mix(elbow.rotation.x, -0.55, waving);
+        elbow.rotation.z = mix(elbow.rotation.z, 0.22 + Math.sin(t * 3.4) * 0.19, waving);
+      }
     });
-    client.head.rotation.set(talking * Math.sin(t * 1.9) * 0.045 + calm * 0.03, sitting * 0.16 + talking * Math.sin(t * 1.1) * 0.11, (1 - calm) * -0.045 + talking * Math.sin(t * 1.25) * 0.055);
-    poseSeated(therapist, 1);
-    therapist.torso.rotation.x = -0.018 + Math.sin(t * 1.3) * 0.008;
-    therapist.head.rotation.set(Math.sin(t * 1.7) * 0.025 * talking, -0.1, 0.055);
+    client.head.rotation.set(talking * Math.sin(t * 1.9) * 0.055 + calm * 0.035 - format * 0.045, sitting * 0.16 + talking * Math.sin(t * 1.1) * 0.11 - waving * 0.16, (1 - calm) * -0.045 + talking * Math.sin(t * 1.25) * 0.055);
+
+    therapist.rig.position.set(therapistSeat.x + therapistUp * 0.24, mix(0.68, 1.04, therapistUp), therapistSeat.z + 0.045 + therapistUp * 0.48);
+    therapist.rig.rotation.y = mix(therapistSeat.yaw - 0.16, -0.38, therapistUp);
+    poseSeated(therapist, 1 - therapistUp);
+    therapist.torso.rotation.x = -0.018 + Math.sin(t * 1.3) * 0.008 + therapistUp * (1 - therapistUp) * 0.4;
+    therapist.torso.scale.y = 1 + Math.sin(t * 1.25 + 0.4) * 0.007;
+    therapist.head.rotation.set(Math.sin(t * 1.7) * 0.045 * (talking + welcome + reassuring) + introduction * (0.055 + Math.sin(t * 0.75) * 0.07), -0.1 + format * 0.13, 0.055 + introduction * Math.sin(t * 1.2) * 0.02);
     therapist.arms.forEach(({ shoulder, elbow }, i) => {
-      shoulder.rotation.x = -0.36;
-      shoulder.rotation.z = i === 0 ? -0.13 : 0.17;
-      elbow.rotation.x = -0.98 + (i === 1 ? Math.sin(t * 1.4) * 0.08 * talking : 0);
-      elbow.rotation.z = i === 0 ? -0.13 : 0.15;
+      const side = i === 0 ? -1 : 1;
+      const gesture = i === 0 ? welcome + format * 0.75 + reassuring * 0.75 : introduction + talking * 0.38 + terms * 0.7;
+      shoulder.rotation.x = -0.36 * (1 - therapistUp) - gesture * (0.12 + Math.sin(t * 1.25) * 0.12);
+      shoulder.rotation.z = side * (0.14 + gesture * (0.24 + Math.sin(t * 1.45 + i) * 0.11));
+      elbow.rotation.x = -0.98 * (1 - therapistUp) - gesture * 0.1 + Math.sin(t * 1.4) * 0.08 * talking;
+      elbow.rotation.z = side * (0.14 + gesture * 0.17);
+      if (i === 0) {
+        shoulder.rotation.z = mix(shoulder.rotation.z, -2.18 + Math.sin(t * 2.3 + 0.7) * 0.12, waving);
+        shoulder.rotation.x = mix(shoulder.rotation.x, -0.12, waving);
+        elbow.rotation.x = mix(elbow.rotation.x, -0.48, waving);
+        elbow.rotation.z = mix(elbow.rotation.z, -0.25 + Math.sin(t * 3.1) * 0.15, waving);
+      }
     });
+    // Reading the notebook is a separate beat; it settles away before standing.
+    const notebookShow = 1 - smooth(0.895, 0.935, p);
+    notebook.scale.setScalar(Math.max(0.001, notebookShow));
+    notebook.visible = notebookShow > 0.001;
+    notebook.rotation.x = -0.15 - introduction * 0.3;
+    notebook.position.y = 0.075 + introduction * 0.055;
+    pencil.rotation.z = 1.23 + introduction * Math.sin(t * 2.1) * 0.07;
+
     thoughts.position.copy(client.rig.position);
     thoughts.position.y += 1.33 + Math.sin(t * 0.8) * 0.025;
+    thoughts.position.x = mix(thoughts.position.x, 0, breathing * 0.86);
+    thoughts.position.y = mix(thoughts.position.y, 2.08, breathing * 0.86);
+    thoughts.position.z = mix(thoughts.position.z, 0.5, breathing * 0.86);
     thoughts.rotation.y = t * 0.07;
     knot.rotation.set(0.15 * Math.sin(t * 0.3), t * 0.16, 0);
-    knot.scale.setScalar(1 - calm * 0.75);
+    knot.scale.setScalar((1 - calm * 0.75) * (1 + talking * Math.sin(t * 1.7) * 0.13));
     knotMaterial.opacity = (1 - calm) * 0.76;
     knot.visible = calm < 0.99;
-    peace.scale.setScalar(0.6 + calm * 0.4);
+    peace.scale.setScalar(0.6 + calm * 0.4 + breathing * (1.05 + Math.sin(t * 1.25) * 0.16));
     peaceMaterial.opacity = calm * 0.95;
     peace.visible = calm > 0.01;
     peace.rotation.y = -t * 0.13;
-    sun.intensity = 2.7 + calm * 0.2;
-    lampLight.intensity = 0.5 + calm * 0.55;
+    peacefulLeaves.forEach((leaf, i) => {
+      leaf.rotation.z = -0.5 + Math.sin(t * 0.8 + i) * 0.2;
+      leaf.position.y = Math.sin(i / 5 * Math.PI * 4) * 0.06 + Math.sin(t * 1.1 + i * 1.3) * 0.025;
+    });
+    const worryShow = smooth(0.065, 0.1, p) * (1 - smooth(0.255, 0.31, p));
+    worries.visible = worryShow > 0.001;
+    worries.scale.setScalar(Math.max(0.001, worryShow));
+    worryObjects.forEach((symbol, i) => {
+      const a = i / 3 * Math.PI * 2 + 0.3;
+      symbol.position.set(Math.cos(a) * 0.5, Math.sin(a) * 0.29 + Math.sin(t * 1.1 + i) * 0.035, Math.sin(a) * 0.19);
+      symbol.rotation.set(0, -thoughts.rotation.y + 0.35, Math.sin(t * 0.8 + i) * 0.12);
+    });
+
+    laptop.visible = format > 0.001;
+    laptop.scale.setScalar(Math.max(0.001, format));
+    laptop.position.y = 0.63 + (1 - format) * 0.2;
+    laptopScreen.rotation.x = -0.14 + (1 - format) * Math.PI * 0.48;
+    onlinePortrait.rotation.z = Math.sin(t * 0.9) * 0.04;
+    connectionDot.scale.setScalar(1 + Math.sin(t * 2) * 0.08);
+    sessionClock.visible = terms > 0.001;
+    sessionClock.scale.setScalar(Math.max(0.001, terms));
+    sessionClock.rotation.y = 0.18;
+    sessionClock.position.y = 1.85 + Math.sin(t * 0.75) * 0.025;
+    minuteHand.rotation.z = -(p - 0.705) * 48 - (reducedMotion ? 0 : t * 0.025);
+    hourHand.rotation.z = -0.92 - (p - 0.705) * 4;
+
+    // The same set opens into a garden: no canvas hand-off or dead final frame.
+    architecture.scale.y = Math.max(0.001, 1 - gardenReveal);
+    architecture.rotation.x = -gardenReveal * 0.22;
+    architecture.position.z = -gardenReveal * 0.22;
+    architecture.visible = gardenReveal < 0.999;
+    garden.visible = gardenReveal > 0.001;
+    garden.scale.set(0.86 + gardenReveal * 0.14, Math.max(0.001, gardenReveal), 0.86 + gardenReveal * 0.14);
+    garden.position.y = -(1 - gardenReveal) * 0.12;
+    gardenPlants.forEach((group, i) => { group.rotation.z = Math.sin(t * 0.8 + i) * 0.016 * gardenReveal; });
+    archLeaves.forEach((leaf, i) => { leaf.rotation.y = Math.sin(t * 0.85 + i * 0.7) * 0.15; });
+    steppingStones.forEach((stone, i) => { stone.position.y = 0.083 - (1 - smooth(0.845 + i * 0.007, 0.945 + i * 0.004, p)) * 0.16; });
+    sun.intensity = 2.7 + calm * 0.2 + gardenReveal * 0.18;
+    lampLight.intensity = 0.5 + calm * 0.55 - gardenReveal * 0.65;
     let left = keyframes[0], right = keyframes[1];
-    for (let i = 0; i < keyframes.length - 1; i++) if (story >= keyframes[i].p) { left = keyframes[i]; right = keyframes[i + 1]; }
-    const u = smooth(left.p, right.p, story);
-    cameraTarget.set(...left.position).lerp(new THREE.Vector3(...right.position), u);
-    lookAt.set(...left.target).lerp(new THREE.Vector3(...right.target), u);
+    for (let i = 0; i < keyframes.length - 1; i++) if (p >= keyframes[i].p) { left = keyframes[i]; right = keyframes[i + 1]; }
+    const u = smooth(left.p, right.p, p);
+    cameraTarget.set(...left.position).lerp(nextCamera.set(...right.position), u);
+    lookAt.set(...left.target).lerp(nextCamera.set(...right.target), u);
+    if (reducedMotion) {
+      // Keep the chapter composition while greatly reducing camera travel.
+      cameraTarget.lerp(nextCamera.set(6.4, 5.6 + gardenReveal, 11.1 + gardenReveal * 1.8), 0.78);
+      lookAt.lerp(nextCamera.set(0, 1.08, 0.18 + gardenReveal * 0.18), 0.78);
+    }
     // Vertical canvases use a wider camera, never crop the set or the actors.
     const fit = width / height < 1.1 ? 1 + (1.1 - width / height) * 0.55 : 1;
     cameraTarget.sub(lookAt).multiplyScalar(fit).add(lookAt);

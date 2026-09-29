@@ -9,114 +9,140 @@ import '@fontsource/cormorant-garamond/cyrillic-500.css';
 import '@fontsource/cormorant-garamond/latin-500-italic.css';
 import './style.css';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
-gsap.registerPlugin(ScrollTrigger);
-const $ = (selector, root = document) => root.querySelector(selector);
-const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
+const $ = (selector, base = document) => base.querySelector(selector);
+const $$ = (selector, base = document) => [...base.querySelectorAll(selector)];
 const root = document.documentElement;
-const story = $('.story');
+const chapters = $$('.film-chapter');
+const sceneWrap = $('.scene-wrap');
 const motionButton = $('.motion-toggle');
 const systemMotion = matchMedia('(prefers-reduced-motion: reduce)');
 let motionPreference = null;
-try { motionPreference = localStorage.getItem('tishe-calm'); } catch { /* Private browsing can disable storage. */ }
+try { motionPreference = localStorage.getItem('tishe-calm'); } catch {}
 let reducedMotion = motionPreference === null ? systemMotion.matches : motionPreference === 'true';
 let room;
-let storyTween;
-let activeChapter = 0;
-let frameVisible = true;
+let activeChapter = -1;
+let chapterCenters = [];
+let chapterStarts = [];
+let readLine = innerHeight / 2;
 let lastRender = 0;
-let pageAnimations;
+let targetProgress = 0;
+let scrollQueued = false;
 const progressState = { value: 0 };
 const pointer = { x: 0, y: 0 };
-const copies = $$('.story-copy');
-const chapterButtons = $$('[data-goto]');
-const captions = ['Можно просто прийти.', 'Кажется, я немного волнуюсь…', 'Можно не торопиться.', 'Мне важно об этом рассказать.', 'Теперь я чуть лучше слышу себя.'];
-const bounds = [0, 0.14, 0.34, 0.53, 0.79];
+const chapterButtons = $$('.chapter-nav button');
+const captions = ['Можно просто прийти.', 'У меня столько всего внутри…', 'Спасибо. Я попробую начать.', 'Я рядом. И я вас слышу.', 'Мне важно об этом рассказать.', 'Сейчас можно никуда не спешить.', 'Мы можем быть на связи.', 'Это время — только для вас.', 'Можно задать ещё один вопрос?', 'Моя история продолжается.'];
+const places = ['Кабинет. Начало истории.', 'Первые шаги. Немного волнения.', 'Два кресла. Место для вас.', 'Знакомство. Ваш психолог.', 'Разговор. По одной ниточке.', 'Тишина. Немного воздуха.', 'Онлайн. Через расстояния.', '50 минут. В вашем темпе.', 'Новая перспектива. Больше ясности.', 'Сад. Ваша история дальше.'];
+const tones = ['#f7f4ed','#f5f1e8','#f5f1e8','#f4f1e8','#f2f0e6','#edf1e4','#edf1e7','#f2efdf','#f3ecd9','#f5ecd9'];
 
-function renderStory(progress) {
-  if (reducedMotion) progress = 0;
-  const index = bounds.reduce((result, value, i) => progress >= value ? i : result, 0);
-  if (index !== activeChapter) {
-    const previous = copies[activeChapter];
-    const next = copies[index];
-    previous.setAttribute('aria-hidden', 'true'); previous.inert = true;
-    next.setAttribute('aria-hidden', 'false'); next.inert = false;
-    gsap.to(previous, { autoAlpha: 0, y: -16, filter: 'blur(4px)', duration: reducedMotion ? 0 : 0.35, overwrite: true });
-    gsap.fromTo(next, { autoAlpha: 0, y: 20, filter: 'blur(4px)' }, { autoAlpha: 1, y: 0, filter: 'blur(0px)', duration: reducedMotion ? 0 : 0.65, overwrite: true, delay: reducedMotion ? 0 : 0.13 });
-    activeChapter = index;
-    $('.scene-caption').textContent = captions[index];
-  }
-  const navIndex = index === 0 ? 0 : index - 1;
-  chapterButtons.forEach((button, i) => { button.classList.toggle('is-active', i === navIndex); if (i === navIndex) button.setAttribute('aria-current', 'step'); else button.removeAttribute('aria-current'); });
-  $('.story-progress span').style.transform = `scaleX(${progress})`;
+function updateChapter(index) {
+  if (index === activeChapter) return;
+  activeChapter = index;
+  root.dataset.chapter = String(index);
+  $('#chapter-number').textContent = String(index + 1).padStart(2,'0');
+  $('#chapter-title').textContent = chapters[index].dataset.title;
+  $('.scene-caption').textContent = captions[index];
+  $('#scene-place').textContent = places[index];
+  chapterButtons.forEach((button,i) => { if(i === index) button.setAttribute('aria-current','step'); else button.removeAttribute('aria-current'); });
+  chapters.forEach((chapter,i) => chapter.classList.toggle('is-current',i === index));
+  gsap.to(root,{ '--film-bg':tones[index], duration:reducedMotion ? 0 : 1.2, overwrite:true });
 }
+
+function measureChapters() {
+  const mobile = innerWidth <= 760;
+  const visualBottom = $('.film-visual').getBoundingClientRect().bottom;
+  readLine = mobile ? visualBottom + Math.max(0,innerHeight - visualBottom - $('.film-controls').offsetHeight) * 0.48 : innerHeight * 0.5;
+  chapterCenters = chapters.map(chapter => {
+    const rect = chapter.getBoundingClientRect();
+    return rect.top + scrollY + rect.height / 2;
+  });
+  chapterStarts = chapters.map(chapter => chapter.getBoundingClientRect().top + scrollY);
+  updateScroll();
+}
+
+function updateScroll() {
+  scrollQueued = false;
+  if (!chapterCenters.length) return;
+  const readingPosition = scrollY + readLine;
+  let interval = 0;
+  while(interval < chapterCenters.length - 2 && readingPosition > chapterCenters[interval + 1]) interval++;
+  const span = chapterCenters[interval + 1] - chapterCenters[interval];
+  const local = Math.max(0,Math.min(1,(readingPosition - chapterCenters[interval]) / span));
+  targetProgress = (interval + local) / (chapters.length - 1);
+  if (scrollY <= 1) targetProgress = 0;
+  if (scrollY >= document.documentElement.scrollHeight - innerHeight - 2) targetProgress = 1;
+  const index = chapterStarts.reduce((current,start,i)=>readingPosition>=start?i:current,0);
+  updateChapter(index);
+  $('.film-progress span').style.transform = `scaleX(${targetProgress})`;
+  if (reducedMotion) progressState.value = targetProgress;
+}
+
+function goToChapter(index) {
+  const target = Math.max(0,Math.min(chapters.length - 1,index));
+  const mobileTop = chapterStarts[target] - $('.film-visual').getBoundingClientRect().bottom + 12;
+  const top = target === 0 ? 0 : innerWidth <= 760 ? mobileTop : chapterCenters[target] - readLine;
+  window.scrollTo({top,behavior:reducedMotion?'instant':'smooth'});
+  history.replaceState(null,'',`#${chapters[target].id}`);
+  chapters[target].tabIndex = -1;
+  chapters[target].focus({preventScroll:true});
+}
+$$('[data-step-target]').forEach(control => control.addEventListener('click',event => {
+  event.preventDefault();
+  const index = Number(control.dataset.stepTarget);
+  closeMenu();
+  goToChapter(index);
+}));
+window.addEventListener('scroll',() => { if(!scrollQueued){scrollQueued=true;requestAnimationFrame(updateScroll);} },{passive:true});
+window.addEventListener('resize',measureChapters,{passive:true});
+new ResizeObserver(measureChapters).observe($('.narrative'));
+document.fonts.ready.then(measureChapters);
+document.querySelectorAll('details').forEach(detail=>detail.addEventListener('toggle',measureChapters));
+document.addEventListener('focusin',event=>{
+  const element=event.target;
+  if(!element.matches('button,a,summary,input,textarea,select') || !element.closest('.narrative'))return;
+  const rect=element.getBoundingClientRect();
+  const top=innerWidth<=760?$('.film-visual').getBoundingClientRect().bottom+16:$('.site-header').offsetHeight+16;
+  const bottom=innerHeight-$('.film-controls').offsetHeight-16;
+  if(rect.top<top)window.scrollBy({top:rect.top-top,behavior:'instant'});
+  else if(rect.bottom>bottom)window.scrollBy({top:rect.bottom-bottom,behavior:'instant'});
+});
 
 function configureMotion() {
-  root.classList.toggle('reduced-motion', reducedMotion);
-  motionButton.setAttribute('aria-pressed', String(reducedMotion));
-  motionButton.title = reducedMotion ? 'Вернуть анимацию истории' : 'Включить спокойный режим';
-  $('.motion-label').textContent = reducedMotion ? 'Вернуть анимацию' : 'Меньше движения';
-  $('.motion-symbol').textContent = reducedMotion ? '▷' : 'Ⅱ';
+  root.classList.toggle('reduced-motion',reducedMotion);
+  motionButton.setAttribute('aria-pressed',String(reducedMotion));
+  motionButton.setAttribute('aria-label',reducedMotion?'Вернуть анимацию истории':'Включить спокойный режим');
+  $('.motion-label').textContent = reducedMotion?'Вернуть анимацию':'Меньше движения';
+  $('.motion-symbol').textContent = reducedMotion?'▷':'Ⅱ';
   room?.setReducedMotion(reducedMotion);
-  storyTween?.scrollTrigger?.kill(); storyTween?.kill();
-  gsap.killTweensOf(copies);
-  copies.forEach((copy, index) => {
-    gsap.set(copy, { autoAlpha: index === 0 ? 1 : 0, y: 0, yPercent: innerWidth > 760 ? -51 : 0, filter: 'none' });
-    copy.inert = index !== 0; copy.setAttribute('aria-hidden', String(index !== 0));
-  });
-  activeChapter = 0; progressState.value = 0;
-  renderStory(0);
-  if (!reducedMotion) {
-    storyTween = gsap.to(progressState, { value: 1, ease: 'none', onUpdate: () => renderStory(progressState.value), scrollTrigger: { trigger: story, start: 'top top', end: 'bottom bottom', scrub: 0.8, invalidateOnRefresh: true } });
-  }
-  configurePageAnimations();
-  ScrollTrigger.refresh();
+  progressState.value=targetProgress;
+  // The chapter, scroll position and all readable content are preserved.
 }
 configureMotion();
-motionButton.addEventListener('click', () => {
-  const wasInStory = window.scrollY < story.offsetHeight;
-  reducedMotion = !reducedMotion;
-  motionPreference = String(reducedMotion);
-  try { localStorage.setItem('tishe-calm', String(reducedMotion)); } catch { /* Preference is optional. */ }
+motionButton.addEventListener('click',()=>{
+  reducedMotion=!reducedMotion;motionPreference=String(reducedMotion);
+  try{localStorage.setItem('tishe-calm',motionPreference);}catch{}
   configureMotion();
-  if (wasInStory) window.scrollTo({ top: 0, behavior: 'instant' });
 });
-systemMotion.addEventListener('change', event => { if (motionPreference === null) { reducedMotion = event.matches; configureMotion(); } });
+systemMotion.addEventListener('change',event=>{if(motionPreference===null){reducedMotion=event.matches;configureMotion();}});
 
-chapterButtons.forEach(button => button.addEventListener('click', () => {
-  const distance = story.offsetHeight - window.innerHeight;
-  window.scrollTo({ top: story.offsetTop + distance * Number(button.dataset.goto), behavior: reducedMotion ? 'instant' : 'smooth' });
-}));
-
-const sceneWrap = $('.scene-wrap');
-const sceneFallback = () => { sceneWrap.classList.add('is-ready'); $('.scene-fallback').hidden = false; $('#room-canvas').hidden = true; $('.scene-note').hidden = true; $('.scene-caption').hidden = true; };
-import('./room.js').then(({ createRoom }) => {
-  room = createRoom($('#room-canvas'), { reducedMotion, onReady: () => sceneWrap.classList.add('is-ready'), onError: sceneFallback });
-  if (!room) return;
-  const resize = () => room.resize(sceneWrap.clientWidth, sceneWrap.clientHeight);
-  new ResizeObserver(resize).observe(sceneWrap); resize();
-  gsap.ticker.add((time) => {
-    if (!frameVisible || document.hidden || time - lastRender < 1 / 40) return;
-    lastRender = time;
-    room.update(reducedMotion ? 0 : progressState.value, reducedMotion ? 0 : time, reducedMotion ? { x: 0, y: 0 } : pointer);
+const sceneFallback=()=>{sceneWrap.classList.add('is-ready');$('.scene-fallback').hidden=false;$('#room-canvas').hidden=true;$('.scene-caption').hidden=true;};
+import('./room.js').then(({createRoom})=>{
+  room=createRoom($('#room-canvas'),{reducedMotion,onReady:()=>{sceneWrap.classList.add('is-ready');$('.scene-loading').setAttribute('aria-hidden','true');},onError:sceneFallback});
+  if(!room)return;
+  const resize=()=>room.resize(sceneWrap.clientWidth,sceneWrap.clientHeight);
+  new ResizeObserver(resize).observe(sceneWrap);resize();
+  gsap.ticker.add((time,delta)=>{
+    if(document.hidden)return;
+    const smoothing=1-Math.exp(-Math.min(delta,64)/180);
+    progressState.value=reducedMotion?targetProgress:progressState.value+(targetProgress-progressState.value)*smoothing;
+    if(time-lastRender<1/40)return;
+    lastRender=time;
+    room.update(progressState.value,reducedMotion?0:time,reducedMotion?{x:0,y:0}:pointer);
   });
-}).catch(error => { console.error('The 3D scene could not load:', error); sceneFallback(); });
-new IntersectionObserver(entries => { frameVisible = entries[0].isIntersecting; }, { rootMargin: '100px' }).observe($('.story-stage'));
-window.addEventListener('pointermove', event => { pointer.x = (event.clientX / innerWidth - 0.5) * 2; pointer.y = (event.clientY / innerHeight - 0.5) * 2; }, { passive: true });
-
-function configurePageAnimations() {
-  pageAnimations?.revert();
-  if (reducedMotion) return;
-  pageAnimations = gsap.context(() => {
-  $$('.reveal').forEach(element => gsap.from(element, { y: 35, autoAlpha: 0, duration: 0.9, ease: 'power2.out', scrollTrigger: { trigger: element, start: 'top 91%', once: true } }));
-  gsap.to('.about-circle', { y: 110, rotation: 15, ease: 'none', scrollTrigger: { trigger: '.about', start: 'top bottom', end: 'bottom top', scrub: 1 } });
-  gsap.fromTo('.breathing-rings', { scale: .8, rotation: -18 }, { scale: 1.15, rotation: 18, ease: 'none', scrollTrigger: { trigger: '.breathing-section', start: 'top bottom', end: 'bottom top', scrub: 1.2 } });
-  gsap.to('.closing-mark', { x: -80, ease: 'none', scrollTrigger: { trigger: '.closing', start: 'top bottom', end: 'bottom top', scrub: 1 } });
-  });
-}
-document.fonts.ready.then(() => ScrollTrigger.refresh());
-window.addEventListener('resize', () => gsap.set(copies, { yPercent: innerWidth > 760 ? -51 : 0 }), { passive: true });
+}).catch(error=>{console.error('The film could not load:',error);sceneFallback();});
+window.addEventListener('pointermove',event=>{pointer.x=(event.clientX/innerWidth-.5)*2;pointer.y=(event.clientY/innerHeight-.5)*2;},{passive:true});
+measureChapters();
+window.addEventListener('load',()=>{measureChapters();const initial=chapters.findIndex(ch=>`#${ch.id}`===location.hash);if(initial>0)goToChapter(initial);},{once:true});
 
 // Native dialog handles focus containment, Escape, and focus restoration.
 const contactDialog = $('.contact-dialog');
