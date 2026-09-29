@@ -1,0 +1,9 @@
+{
+  "name": "tishe-psychology",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite --host 127.0.0.1 --port 5173 --strictPort", "build": "vite build", "preview": "vite preview --host 127.0.0.1" },
+  "dependencies": { "gsap": "^3.13.0", "three": "^0.180.0", "@fontsource/manrope": "^5.2.8", "@fontsource/cormorant-garamond": "^5.2.8" },
+  "devDependencies": { "vite": "^6.1.0" }
+}
