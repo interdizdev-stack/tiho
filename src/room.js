@@ -338,58 +338,65 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   const pencil = cylinder(0.009, 0.009, 0.24, M.oak, notebook, [0.03, 0.04, 0.025], 8);
   pencil.rotation.z = 1.23;
 
-  // Thought sculptures follow the visitor, then unravel into a quiet golden orbit.
+  // One readable thought bubble. The same strands untangle into a living sprig.
   const thoughts = new THREE.Group();
   stage.add(thoughts);
-  const knotMaterial = mat(0x778681, 0.7, { transparent: true, opacity: 0.86, depthWrite: false });
+  const cloudMaterial = mat(0xfff9eb, 0.9, { name: 'thought-cloud', transparent: true, opacity: 1, depthWrite: false });
+  const worries = new THREE.Group();
+  thoughts.add(worries);
+  // A single bevelled silhouette avoids intersecting translucent cloud lobes.
+  const cloudShape = new THREE.Shape();
+  cloudShape.moveTo(-0.38, -0.22);
+  cloudShape.bezierCurveTo(-0.64, -0.22, -0.66, 0.13, -0.43, 0.16);
+  cloudShape.bezierCurveTo(-0.42, 0.39, -0.16, 0.43, -0.04, 0.29);
+  cloudShape.bezierCurveTo(0.12, 0.46, 0.39, 0.36, 0.4, 0.19);
+  cloudShape.bezierCurveTo(0.65, 0.2, 0.67, -0.16, 0.44, -0.21);
+  cloudShape.bezierCurveTo(0.24, -0.27, -0.17, -0.25, -0.38, -0.22);
+  const thoughtCloud = mesh(new THREE.ExtrudeGeometry(cloudShape, { depth: 0.07, steps: 1, bevelEnabled: true, bevelSegments: 3, bevelSize: 0.035, bevelThickness: 0.035, curveSegments: 12 }), cloudMaterial, worries, [0, 0, -0.13]);
+  const thoughtDots = [
+    sphere(0.034, cloudMaterial, worries, [-0.10, -0.43, 0]),
+    sphere(0.058, cloudMaterial, worries, [-0.19, -0.33, 0]),
+  ];
+
   const knot = new THREE.Group();
   thoughts.add(knot);
+  const thoughtStrands = [];
+  const tangledCurves = [
+    [[-0.32,-0.06,0.16],[-0.28,0.15,0.18],[-0.08,0.21,0.12],[0.16,0.09,0.18],[0.21,-0.1,0.14],[0.04,-0.13,0.12],[-0.13,0.03,0.22],[0.04,0.16,0.14],[0.3,0.08,0.17]],
+    [[-0.29,0.08,0.20],[-0.13,-0.10,0.21],[0.12,-0.09,0.12],[0.29,0.13,0.14],[0.13,0.23,0.20],[-0.06,0.08,0.23],[-0.11,-0.13,0.15],[0.12,-0.11,0.22],[0.31,0.05,0.14]],
+    [[-0.32,0.14,0.13],[-0.09,0.24,0.15],[0.11,0.05,0.24],[0.03,-0.12,0.20],[-0.22,-0.10,0.14],[-0.22,0.08,0.13],[0.02,0.15,0.13],[0.26,0.04,0.22],[0.25,-0.1,0.17]],
+  ];
+  const sprigCurves = [
+    [[-0.02,-0.23,0.15], [0,-0.09,0.16], [0.025,0.065,0.15], [0.13,0.23,0.16], [0.21,0.32,0.15]],
+    [[0,-0.12,0.16], [-0.12,-0.025,0.17], [-0.26,0.08,0.16], [-0.38,0.16,0.15]],
+    [[0.02,0.015,0.16], [0.17,0.03,0.17], [0.3,0.12,0.16], [0.4,0.21,0.15]],
+  ];
+  const strandColors = [0x71887c, 0xbf765d, 0xcda358];
+  const sprigColors = [0x718455, 0x91a16f, 0xc6a45f];
   for (let j = 0; j < 3; j++) {
-    const points = [];
-    for (let i = 0; i < 37; i++) {
-      const a = i / 36 * Math.PI * 2;
-      points.push([Math.sin(a * (2 + j)) * 0.23, Math.cos(a * 3 + j) * 0.125, Math.cos(a * (3 + j)) * 0.19]);
-    }
-    tube(points, 0.012, knotMaterial, knot, true).rotation.y = j * 1.17;
+    const points = tangledCurves[j].map(p => new THREE.Vector3(...p));
+    const geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 96, 0.017, 7, false);
+    const target = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(sprigCurves[j].map(p => new THREE.Vector3(...p))), 96, 0.017, 7, false);
+    // GPU morphing keeps topology, depth and normals continuous while scrubbing.
+    geometry.morphAttributes.position = [target.attributes.position];
+    geometry.morphAttributes.normal = [target.attributes.normal];
+    const material = mat(strandColors[j], 0.75, { name: `thought-strand-${j}`, transparent: true, depthWrite: false });
+    const strand = mesh(geometry, material, knot);
+    thoughtStrands.push({ strand, from: new THREE.Color(strandColors[j]), to: new THREE.Color(sprigColors[j]) });
+    target.dispose();
   }
   const peace = new THREE.Group();
   thoughts.add(peace);
-  const peaceMaterial = mat(0xd4a451, 0.7, { transparent: true, opacity: 0, depthWrite: false });
-  const peacePoints = [];
-  for (let i = 0; i < 49; i++) {
-    const a = i / 48 * Math.PI * 2;
-    peacePoints.push([Math.cos(a) * 0.33, Math.sin(a * 2) * 0.06, Math.sin(a) * 0.25]);
-  }
-  tube(peacePoints, 0.009, peaceMaterial, peace, true);
+  const leafMaterial = mat(0x9ba978, 0.85, { name: 'thought-leaves', transparent: true, opacity: 0, depthWrite: false });
   const peacefulLeaves = [];
-  for (let i = 0; i < 5; i++) {
-    const a = i / 5 * Math.PI * 2;
-    const leaf = sphere(0.067, peaceMaterial, peace, [Math.cos(a) * 0.33, Math.sin(a * 2) * 0.06, Math.sin(a) * 0.25], [0.52, 1, 0.2]);
-    leaf.rotation.set(0.4, -a, -0.5);
-    peacefulLeaves.push(leaf);
+  const leafPositions = [[-0.15,0.02,-0.85],[-0.25,0.115,0.6],[-0.38,0.20,-0.65],[0.04,0.12,-0.65],[0.13,0.22,0.7],[0.22,0.35,-0.3],[0.2,0.07,-0.8],[0.31,0.17,0.65],[0.42,0.25,-0.6]];
+  for (const [i, [x,y,angle]] of leafPositions.entries()) {
+    const leaf = sphere(0.08, leafMaterial, peace, [x,y,0.17], [0.53,1,0.24]);
+    leaf.rotation.set(0.06, i % 2 ? -0.18 : 0.18, angle);
+    peacefulLeaves.push({ leaf, angle });
   }
-
-  // Three little worries become visible while the visitor finds a seat.
-  const worries = new THREE.Group();
-  thoughts.add(worries);
-  const worryObjects = [];
-  for (let i = 0; i < 3; i++) {
-    const symbol = new THREE.Group();
-    worries.add(symbol);
-    worryObjects.push(symbol);
-    if (i === 0) {
-      for (let j = 0; j < 3; j++) sphere(0.095, M.blue, symbol, [(j - 1) * 0.12, j === 1 ? 0.06 : 0, 0], [1.05, 0.8, 0.55]);
-      for (let j = 0; j < 2; j++) capsule(0.08, 0.015, M.sage, symbol, [(j - 0.5) * 0.15, -0.16, 0]).rotation.z = -0.2;
-    } else if (i === 1) {
-      const zigzag = [[-0.07, 0.2, 0], [-0.14, 0, 0], [0.04, 0.025, 0], [-0.03, -0.17, 0]];
-      tube(zigzag, 0.032, M.yellow, symbol);
-    } else {
-      for (let j = 0; j < 2; j++) {
-        const loop = mesh(new THREE.TorusGeometry(0.14, 0.022, 7, 24), M.terra, symbol, [(j - 0.5) * 0.15, 0, 0]);
-        loop.rotation.y = j ? 0.6 : -0.6;
-      }
-    }
-  }
+  // Imagined objects should not cast busy, impossible shadows onto the face/set.
+  thoughts.traverse(object => { object.castShadow = false; object.receiveShadow = false; });
 
   // Act seven: a real folding laptop, with a clay portrait on its screen.
   const laptop = new THREE.Group();
@@ -624,32 +631,33 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     notebook.position.y = 0.075 + introduction * 0.055;
     pencil.rotation.z = 1.23 + introduction * Math.sin(t * 2.1) * 0.07;
 
+    const unravel = smooth(0.435, 0.605, p);
+    const thoughtShow = 1 - smooth(0.69, 0.765, p);
+    const worryShow = 1 - unravel * 0.08;
+    thoughts.visible = thoughtShow > 0.001;
     thoughts.position.copy(client.rig.position);
-    thoughts.position.y += 1.72 + Math.sin(t * 0.8) * 0.025;
-    thoughts.position.x = mix(thoughts.position.x, 0, breathing * 0.86);
-    thoughts.position.y = mix(thoughts.position.y, 2.08, breathing * 0.86);
-    thoughts.position.z = mix(thoughts.position.z, 0.5, breathing * 0.86);
-    thoughts.rotation.y = t * 0.07;
-    knot.rotation.set(0.15 * Math.sin(t * 0.3), t * 0.16, 0);
-    knot.scale.setScalar((1 - calm * 0.75) * (1 + talking * Math.sin(t * 1.7) * 0.13));
-    knotMaterial.opacity = (1 - calm) * 0.76;
-    knot.visible = calm < 0.99;
-    peace.scale.setScalar(0.6 + calm * 0.4 + breathing * (1.05 + Math.sin(t * 1.25) * 0.16));
-    peaceMaterial.opacity = calm * 0.95;
-    peace.visible = calm > 0.01;
-    peace.rotation.y = -t * 0.13;
-    peacefulLeaves.forEach((leaf, i) => {
-      leaf.rotation.z = -0.5 + Math.sin(t * 0.8 + i) * 0.2;
-      leaf.position.y = Math.sin(i / 5 * Math.PI * 4) * 0.06 + Math.sin(t * 1.1 + i * 1.3) * 0.025;
+    thoughts.position.y += 1.76 + Math.sin(t * 0.8) * 0.012;
+    thoughts.scale.setScalar(1 + breathing * Math.sin(t * 1.25) * 0.025);
+    // Small in-place breathing replaces the old flight into the middle of the room.
+    knot.rotation.z = Math.sin(t * 0.65) * 0.035 * (1 - unravel);
+    thoughtStrands.forEach(({strand, from, to}, i) => {
+      strand.morphTargetInfluences[0] = smooth(i * 0.09, 0.82 + i * 0.09, unravel);
+      strand.material.color.copy(from).lerp(to, unravel);
+      strand.material.opacity = thoughtShow;
+      strand.material.depthWrite = thoughtShow > 0.999;
     });
-    const worryShow = smooth(0.065, 0.1, p) * (1 - smooth(0.255, 0.31, p));
-    worries.visible = worryShow > 0.001;
-    worries.scale.setScalar(Math.max(0.001, worryShow));
-    worryObjects.forEach((symbol, i) => {
-      const a = i / 3 * Math.PI * 2 + 0.3;
-      symbol.position.set(Math.cos(a) * 0.5, Math.sin(a) * 0.29 + Math.sin(t * 1.1 + i) * 0.035, Math.sin(a) * 0.19);
-      symbol.rotation.set(0, -thoughts.rotation.y + 0.35, Math.sin(t * 0.8 + i) * 0.12);
+    cloudMaterial.opacity = worryShow * thoughtShow;
+    worries.visible = thoughtShow > 0.001;
+    // Keep an ivory silhouette behind the sprig: room plants must not merge with it.
+    const leafGrowth = smooth(0.58, 1, unravel);
+    leafMaterial.opacity = leafGrowth * thoughtShow;
+    peace.visible = leafGrowth > 0.001;
+    peacefulLeaves.forEach(({leaf, angle}, i) => {
+      const growth = smooth(i * 0.035, 0.72 + i * 0.035, leafGrowth);
+      leaf.scale.set(0.53 * growth, growth, 0.24 * growth);
+      leaf.rotation.z = angle + Math.sin(t * 0.8 + i * 0.7) * 0.055 * leafGrowth;
     });
+    thoughtDots.forEach((dot, i) => dot.scale.setScalar(1 - smooth(0.12 + i * 0.1, 0.65, unravel) * 0.25));
 
     laptop.visible = format > 0.001;
     laptop.scale.setScalar(Math.max(0.001, format * 0.82));
@@ -712,6 +720,8 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     cameraTarget.copy(lookAt).addScaledVector(viewDirection, requiredDistance);
     camera.position.copy(cameraTarget);
     camera.lookAt(lookAt);
+    // Keep the drawing readable during camera turns; it never orbits through itself.
+    thoughts.quaternion.copy(camera.quaternion);
     renderer.render(scene, camera);
   }
   function resize(w, h) {

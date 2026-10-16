@@ -12,7 +12,7 @@ source = source.replace("'three'", JSON.stringify(pathToFileURL(resolve(project,
 source = source.replace("'three/addons/geometries/RoundedBoxGeometry.js'", JSON.stringify(pathToFileURL(resolve(project, 'node_modules/three/examples/jsm/geometries/RoundedBoxGeometry.js')).href));
 source = source.replace('new THREE.WebGLRenderer(', 'new TestRenderer(');
 source = `class TestRenderer { shadowMap = {}; setPixelRatio(){} setClearColor(){} setSize(){} dispose(){} render(scene,camera){ scene.updateMatrixWorld(true); camera.updateMatrixWorld(true); } }\n${source}`;
-source = source.replace('return { update, resize, dispose,', 'return { audit: { scene, camera, stage, client, therapist, table, laptop, tissue, cupHandle, architecture, garden, worries, gardenPlants }, update, resize, dispose,');
+source = source.replace('return { update, resize, dispose,', 'return { audit: { scene, camera, stage, client, therapist, table, laptop, tissue, cupHandle, architecture, garden, worries, gardenPlants, thoughts, knot }, update, resize, dispose,');
 globalThis.window = { devicePixelRatio: 1 };
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ createRadialGradient: () => ({addColorStop(){}}), fillRect(){} }) }) };
 const { createRoom } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
@@ -85,6 +85,37 @@ test('floating emotion symbols stay above the client face',()=>{
     const headTop=bounds(room.audit.client.head).max.y;
     assert.ok(symbolBottom>headTop+.025,`emotion symbols intersect the face at ${p}: ${symbolBottom.toFixed(3)} vs head ${headTop.toFixed(3)}`);
   }
+});
+
+test('thoughts remain anchored to the client during the breathing transition',()=>{
+  for(let i=0;i<=80;i++){
+    const p=.48+i*.002;room.update(p,3.5);
+    const offset=room.audit.thoughts.position.clone().sub(room.audit.client.rig.position);
+    assert.ok(Math.hypot(offset.x,offset.z)<.12,`thoughts drift away from the client at ${p}`);
+    assert.ok(bounds(room.audit.thoughts).min.y>bounds(room.audit.client.head).max.y+.025,`thoughts cross the head at ${p}`);
+  }
+});
+
+test('thought strands untangle continuously and restore their shape on reverse scroll',()=>{
+  const strands=room.audit.knot.children;
+  assert.equal(strands.length,3);
+  for(const strand of strands){
+    assert.equal(strand.geometry.morphAttributes.position[0].count,strand.geometry.attributes.position.count);
+    assert.equal(strand.geometry.morphAttributes.normal[0].count,strand.geometry.attributes.normal.count);
+    assert.ok([...strand.geometry.morphAttributes.position[0].array].every(Number.isFinite));
+  }
+  let previous=[0,0,0];
+  for(let i=0;i<=170;i++){
+    room.update(.435+i*.001,2);
+    const current=strands.map(s=>s.morphTargetInfluences[0]);
+    current.forEach((value,j)=>assert.ok(value>=previous[j]&&value-previous[j]<.035,'a thought strand jumps during unravelling'));
+    previous=current;
+  }
+  assert.deepEqual(previous,[1,1,1]);
+  room.update(.3,2);
+  assert.deepEqual(strands.map(s=>s.morphTargetInfluences[0]),[0,0,0]);
+  room.update(.8,2);
+  assert.equal(room.audit.thoughts.visible,false,'the thought effect competes with the session clock');
 });
 
 test('garden plants do not move through chairs while the courtyard appears',()=>{
