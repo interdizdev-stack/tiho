@@ -84,11 +84,13 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   // The room opens like a little stage set in the final act.
   const architecture = new THREE.Group();
   stage.add(architecture);
-  box(6.45, 0.22, 4.65, M.plaster, stage, [0, -0.16, 0], 0.18);
-  box(6.37, 0.085, 4.57, M.ivory, stage, [0, -0.012, 0], 0.14);
-  box(6.37, 0.035, 4.57, M.oakLight, stage, [0, -0.225, 0], 0.03);
-  const plankMat = mat(0xc9b89a, 1, { transparent: true, opacity: 0.26 });
-  for (let x = -2.8; x < 3; x += 0.57) box(0.008, 0.003, 4.3, plankMat, stage, [x, 0.034, 0], 0.001);
+  const floor = new THREE.Group();
+  stage.add(floor);
+  box(6.45, 0.22, 4.65, M.plaster, floor, [0, -0.16, 0], 0.18);
+  const floorSurface = box(6.37, 0.085, 4.57, mat(0xf6ecdb, .83, { name: 'continuous-floor' }), floor, [0, -0.012, 0], 0.14);
+  box(6.37, 0.035, 4.57, M.oakLight, floor, [0, -0.225, 0], 0.03);
+  const plankMat = mat(0xc9b89a, 1, { transparent: true, opacity: 0.26, depthWrite: false });
+  for (let x = -2.8; x < 3; x += 0.57) box(0.008, 0.003, 4.3, plankMat, floor, [x, 0.034, 0], 0.001);
   box(6.35, 2.86, 0.18, M.plaster, architecture, [0, 1.43, -2.21], 0.08);
   box(6.1, 0.095, 0.085, M.ivory, architecture, [0, 0.15, -2.085], 0.015);
   box(0.16, 2.86, 1.18, M.plaster, architecture, [-3.11, 1.43, -1.7], 0.07);
@@ -184,7 +186,8 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       leg.rotation.x = lz * 0.14;
     }
     box(1.02, 0.25, 0.93, upholstery, group, [0, 0.34, 0], 0.12);
-    box(0.79, 0.2, 0.8, upholstery, group, [0, 0.48, 0.075], 0.095);
+    // Keep the cushion below the horizontal thighs rather than inside the legs.
+    box(0.79, 0.18, 0.8, upholstery, group, [0, 0.41, 0.075], 0.085);
     const back = box(1.02, 0.92, 0.27, upholstery, group, [0, 0.76, -0.37], 0.12);
     back.rotation.x = -0.085;
     box(0.81, 0.67, 0.12, upholstery, group, [0, 0.82, -0.198], 0.08).rotation.x = -0.085;
@@ -200,18 +203,24 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   const table = new THREE.Group();
   table.position.set(0.18, 0, 0.47);
   stage.add(table);
-  cylinder(0.4, 0.38, 0.09, M.oakLight, table, [0, 0.55, 0]);
+  cylinder(0.56, 0.54, 0.09, M.oakLight, table, [0, 0.55, 0]);
   for (let i = 0; i < 3; i++) {
     const angle = i * Math.PI * 2 / 3;
     const leg = cylinder(0.035, 0.048, 0.47, M.oak, table, [Math.cos(angle) * 0.23, 0.285, Math.sin(angle) * 0.23]);
     leg.rotation.z = -Math.cos(angle) * 0.14;
     leg.rotation.x = Math.sin(angle) * 0.14;
   }
-  cylinder(0.092, 0.074, 0.13, M.ivory, table, [-0.13, 0.656, 0.11]);
-  cylinder(0.071, 0.071, 0.005, mat(0x77523b), table, [-0.13, 0.723, 0.11]);
-  const cupHandle = mesh(new THREE.TorusGeometry(0.05, 0.015, 7, 16), M.ivory, table, [-0.228, 0.659, 0.11]);
-  box(0.19, 0.115, 0.16, M.sage, table, [0.13, 0.65, -0.09], 0.025);
-  const tissue = box(0.09, 0.09, 0.017, M.white, table, [0.13, 0.747, -0.09], 0.006);
+  const cup = new THREE.Group();
+  cup.position.set(-0.34, 0, 0.26);
+  table.add(cup);
+  cylinder(0.092, 0.074, 0.13, M.ivory, cup, [0, 0.66, 0]);
+  cylinder(0.071, 0.071, 0.005, mat(0x77523b), cup, [0, 0.727, 0]);
+  const cupHandle = mesh(new THREE.TorusGeometry(0.05, 0.015, 7, 16), M.ivory, cup, [-0.098, 0.663, 0]);
+  const tissues = new THREE.Group();
+  tissues.position.set(0.31, 0, 0.25);
+  table.add(tissues);
+  box(0.19, 0.115, 0.16, M.sage, tissues, [0, 0.6525, 0], 0.025);
+  const tissue = box(0.09, 0.09, 0.017, M.white, tissues, [0, 0.752, 0], 0.006);
   tissue.rotation.z = -0.19;
 
   function plant(parent, position, size = 1) {
@@ -332,7 +341,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   // Thought sculptures follow the visitor, then unravel into a quiet golden orbit.
   const thoughts = new THREE.Group();
   stage.add(thoughts);
-  const knotMaterial = mat(0x778681, 0.7, { transparent: true, opacity: 0.86 });
+  const knotMaterial = mat(0x778681, 0.7, { transparent: true, opacity: 0.86, depthWrite: false });
   const knot = new THREE.Group();
   thoughts.add(knot);
   for (let j = 0; j < 3; j++) {
@@ -345,7 +354,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   }
   const peace = new THREE.Group();
   thoughts.add(peace);
-  const peaceMaterial = mat(0xd4a451, 0.7, { transparent: true, opacity: 0 });
+  const peaceMaterial = mat(0xd4a451, 0.7, { transparent: true, opacity: 0, depthWrite: false });
   const peacePoints = [];
   for (let i = 0; i < 49; i++) {
     const a = i / 48 * Math.PI * 2;
@@ -384,7 +393,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
 
   // Act seven: a real folding laptop, with a clay portrait on its screen.
   const laptop = new THREE.Group();
-  laptop.position.set(0.22, 0.63, 0.45);
+  laptop.position.set(table.position.x, 0.6225, table.position.z - 0.15);
   stage.add(laptop);
   box(0.87, 0.055, 0.56, M.dark, laptop, [0, 0, 0], 0.025);
   box(0.67, 0.01, 0.3, M.sage, laptop, [0, 0.032, -0.045], 0.016);
@@ -426,11 +435,12 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   // The last two acts transform the room into an open garden courtyard.
   const garden = new THREE.Group();
   stage.add(garden);
-  box(7.65, 0.16, 6.4, mat(0xc5cda9), garden, [0, -0.19, 0.05], 0.16);
-  box(7.5, 0.035, 6.26, mat(0xd6d9b9), garden, [0, -0.088, 0.05], 0.12);
+  // The original floor expands into the courtyard. A second overlapping floor
+  // caused depth flicker and left the departing actor floating above the garden.
   const steppingStones = [];
   for (let i = 0; i < 6; i++) {
-    const stone = cylinder(0.32, 0.36, 0.065, M.ivory, garden, [-0.74 + Math.sin(i * 0.63) * 0.35, 0.083, 0.5 + i * 0.44], 20);
+    const fraction = i / 5;
+    const stone = cylinder(0.25, 0.28, 0.008, M.ivory, garden, [-0.88 + fraction * 0.47, 0.034, 1.13 + fraction * 1.32], 20);
     stone.scale.z = 0.62;
     stone.rotation.y = i * 0.6;
     steppingStones.push(stone);
@@ -479,6 +489,25 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   const cameraTarget = new THREE.Vector3();
   const lookAt = new THREE.Vector3();
   const nextCamera = new THREE.Vector3();
+  const viewDirection = new THREE.Vector3();
+  const viewRight = new THREE.Vector3();
+  const viewUp = new THREE.Vector3();
+  const framingPoint = new THREE.Vector3();
+  const upAxis = new THREE.Vector3(0, 1, 0);
+  const floorRoomColor = new THREE.Color(0xf6ecdb);
+  const floorGardenColor = new THREE.Color(0xd6d9b9);
+  const soleCorners = [[-0.0125, -0.143], [-0.0125, 0.143], [0.0125, -0.143], [0.0125, 0.143]];
+  function plantFeet(actor) {
+    let lowest = Infinity;
+    for (const { hip, knee } of actor.legs) {
+      const thigh = hip.rotation.x;
+      const shin = thigh + knee.rotation.x;
+      for (const [y, z] of soleCorners) {
+        lowest = Math.min(lowest, hip.position.y - 0.38 * Math.cos(thigh) + (-0.636 + y) * Math.cos(shin) - (0.069 + z) * Math.sin(shin));
+      }
+    }
+    actor.rig.position.y = 0.0365 - lowest;
+  }
   const keyframes = [
     { p: 0, position: [7.4, 6.15, 10.7], target: [0, 1.06, 0] },
     { p: 0.13, position: [5.6, 5.0, 10.9], target: [-0.1, 1.08, 0.12] },
@@ -501,7 +530,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   function update(progress = 0, time = 0, pointer = { x: 0, y: 0 }) {
     if (disposed) return;
     const p = THREE.MathUtils.clamp(progress, 0, 1);
-    const t = reducedMotion ? 0 : time;
+    const t = Number.isFinite(time) ? time : 0;
     // All staging is a function of scroll, so scrubbing backwards restores the film.
     // Quiet mode still visits every chapter; only continuous movement is stopped.
     const walking = smooth(0.025, 0.19, p);
@@ -525,12 +554,12 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     const walkStrength = reducedMotion ? 0 : entryStrength + exitStrength;
     const step = (walking * 12 + leaving * 8) * Math.PI;
     // A curved route passes the armrest, then a second route leads onto the garden path.
-    const approachX = clientSeat.x + Math.sin(clientSeat.yaw) * 0.46;
-    const approachZ = clientSeat.z + Math.cos(clientSeat.yaw) * 0.46;
+    const approachX = clientSeat.x + Math.sin(clientSeat.yaw) * 0.78;
+    const approachZ = clientSeat.z + Math.cos(clientSeat.yaw) * 0.78;
     const before = 1 - walking;
-    const routeX = before * before * -2.43 + 2 * before * walking * -2.52 + walking * walking * approachX;
-    const routeZ = before * before * -0.56 + 2 * before * walking * 1.62 + walking * walking * approachZ;
-    const direction = Math.atan2(before * (-2.52 + 2.43) + walking * (approachX + 2.52), before * (1.62 + 0.56) + walking * (approachZ - 1.62));
+    const routeX = before * before * -2.43 + 2 * before * walking * -2.55 + walking * walking * approachX;
+    const routeZ = before * before * -0.56 + 2 * before * walking * 2.05 + walking * walking * approachZ;
+    const direction = Math.atan2(before * (-2.55 + 2.43) + walking * (approachX + 2.55), before * (2.05 + 0.56) + walking * (approachZ - 2.05));
     const exitX = mix(approachX, -0.41, leaving) + Math.sin(leaving * Math.PI) * 0.13;
     const exitZ = mix(approachZ, 2.45, leaving);
     const chairX = mix(routeX, clientSeat.x, sitDown);
@@ -541,13 +570,14 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     client.rig.rotation.y = mix(mix(direction, seatedYaw, smooth(0.16, 0.215, p)), exitYaw, smooth(0.871, 0.905, p));
     client.torso.rotation.x = Math.sin(sitting * Math.PI) * 0.19 - talking * 0.05 + gettingUp * (1 - gettingUp) * 0.38;
     client.torso.rotation.z = Math.sin(t * 0.85) * 0.012 * (1 - walkStrength);
-    client.torso.scale.y = 1 + Math.sin(t * (breathing ? 1.25 : 1.5)) * (0.008 + breathing * 0.016);
+    client.torso.scale.y = 1 + Math.sin(t * 1.4) * (0.008 + breathing * 0.016);
     poseSeated(client, sitting);
     client.legs.forEach(({ hip, knee }, i) => {
       const phase = step + i * Math.PI;
       hip.rotation.x += Math.sin(phase) * 0.5 * walkStrength;
       knee.rotation.x += Math.max(0, -Math.sin(phase)) * 0.62 * walkStrength;
     });
+    plantFeet(client);
     client.arms.forEach(({ shoulder, elbow }, i) => {
       const side = i === 0 ? -1 : 1;
       const phase = step + (i + 1) * Math.PI;
@@ -564,9 +594,11 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     });
     client.head.rotation.set(talking * Math.sin(t * 1.9) * 0.055 + calm * 0.035 - format * 0.045, sitting * 0.16 + talking * Math.sin(t * 1.1) * 0.11 - waving * 0.16, (1 - calm) * -0.045 + talking * Math.sin(t * 1.25) * 0.055);
 
-    therapist.rig.position.set(therapistSeat.x + therapistUp * 0.24, mix(0.68, 1.04, therapistUp), therapistSeat.z + 0.045 + therapistUp * 0.48);
+    // Rise through the open front of the rotated chair, not through its armrest.
+    therapist.rig.position.set(therapistSeat.x + Math.sin(therapistSeat.yaw) * therapistUp * 0.78, mix(0.68, 1.04, therapistUp), therapistSeat.z + 0.045 + Math.cos(therapistSeat.yaw) * therapistUp * 0.78);
     therapist.rig.rotation.y = mix(therapistSeat.yaw - 0.16, -0.38, therapistUp);
     poseSeated(therapist, 1 - therapistUp);
+    plantFeet(therapist);
     therapist.torso.rotation.x = -0.018 + Math.sin(t * 1.3) * 0.008 + therapistUp * (1 - therapistUp) * 0.4;
     therapist.torso.scale.y = 1 + Math.sin(t * 1.25 + 0.4) * 0.007;
     therapist.head.rotation.set(Math.sin(t * 1.7) * 0.045 * (talking + welcome + reassuring) + introduction * (0.055 + Math.sin(t * 0.75) * 0.07), -0.1 + format * 0.13, 0.055 + introduction * Math.sin(t * 1.2) * 0.02);
@@ -593,7 +625,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     pencil.rotation.z = 1.23 + introduction * Math.sin(t * 2.1) * 0.07;
 
     thoughts.position.copy(client.rig.position);
-    thoughts.position.y += 1.33 + Math.sin(t * 0.8) * 0.025;
+    thoughts.position.y += 1.72 + Math.sin(t * 0.8) * 0.025;
     thoughts.position.x = mix(thoughts.position.x, 0, breathing * 0.86);
     thoughts.position.y = mix(thoughts.position.y, 2.08, breathing * 0.86);
     thoughts.position.z = mix(thoughts.position.z, 0.5, breathing * 0.86);
@@ -620,8 +652,8 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     });
 
     laptop.visible = format > 0.001;
-    laptop.scale.setScalar(Math.max(0.001, format));
-    laptop.position.y = 0.63 + (1 - format) * 0.2;
+    laptop.scale.setScalar(Math.max(0.001, format * 0.82));
+    laptop.position.y = 0.6225 + (1 - format) * 0.12;
     laptopScreen.rotation.x = -0.14 + (1 - format) * Math.PI * 0.48;
     onlinePortrait.rotation.z = Math.sin(t * 0.9) * 0.04;
     connectionDot.scale.setScalar(1 + Math.sin(t * 2) * 0.08);
@@ -633,16 +665,18 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     hourHand.rotation.z = -0.92 - (p - 0.705) * 4;
 
     // The same set opens into a garden: no canvas hand-off or dead final frame.
-    architecture.scale.y = Math.max(0.001, 1 - gardenReveal);
-    architecture.rotation.x = -gardenReveal * 0.22;
-    architecture.position.z = -gardenReveal * 0.22;
-    architecture.visible = gardenReveal < 0.999;
-    garden.visible = gardenReveal > 0.001;
-    garden.scale.set(0.86 + gardenReveal * 0.14, Math.max(0.001, gardenReveal), 0.86 + gardenReveal * 0.14);
-    garden.position.y = -(1 - gardenReveal) * 0.12;
+    const wallsAway = smooth(0.84, 0.91, p);
+    const gardenDetails = smooth(0.91, 0.975, p);
+    architecture.position.y = -3.1 * wallsAway;
+    architecture.visible = wallsAway < 0.999;
+    floor.scale.set(1 + gardenReveal * 0.19, 1, 1 + gardenReveal * 0.4);
+    floorSurface.material.color.copy(floorRoomColor).lerp(floorGardenColor, gardenReveal);
+    plankMat.opacity = 0.26 * (1 - gardenReveal);
+    garden.visible = gardenDetails > 0.001;
+    // Preserve every prop's horizontal anchor as it grows out of the ground.
+    garden.scale.set(1, Math.max(0.001, gardenDetails), 1);
     gardenPlants.forEach((group, i) => { group.rotation.z = Math.sin(t * 0.8 + i) * 0.016 * gardenReveal; });
     archLeaves.forEach((leaf, i) => { leaf.rotation.y = Math.sin(t * 0.85 + i * 0.7) * 0.15; });
-    steppingStones.forEach((stone, i) => { stone.position.y = 0.083 - (1 - smooth(0.845 + i * 0.007, 0.945 + i * 0.004, p)) * 0.16; });
     sun.intensity = 2.7 + calm * 0.2 + gardenReveal * 0.18;
     lampLight.intensity = 0.5 + calm * 0.55 - gardenReveal * 0.65;
     let left = keyframes[0], right = keyframes[1];
@@ -655,13 +689,27 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       cameraTarget.lerp(nextCamera.set(6.4, 5.6 + gardenReveal, 11.1 + gardenReveal * 1.8), 0.78);
       lookAt.lerp(nextCamera.set(0, 1.08, 0.18 + gardenReveal * 0.18), 0.78);
     }
-    // Vertical canvases use a wider camera, never crop the set or the actors.
-    const fit = width / height < 1.1 ? 1 + (1.1 - width / height) * 0.55 : 1;
-    cameraTarget.sub(lookAt).multiplyScalar(fit).add(lookAt);
     if (!reducedMotion) {
       cameraTarget.x += (pointer.x || 0) * 0.24;
       cameraTarget.y += (pointer.y || 0) * 0.12;
     }
+    // Fit the whole set to the actual canvas frustum, including courtyard corners.
+    // Aspect-ratio heuristics clipped the furniture on tall and narrow canvases.
+    viewDirection.copy(cameraTarget).sub(lookAt).normalize();
+    viewRight.crossVectors(upAxis, viewDirection).normalize();
+    viewUp.crossVectors(viewDirection, viewRight).normalize();
+    const verticalTan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 0.91;
+    const horizontalTan = verticalTan * camera.aspect;
+    let requiredDistance = cameraTarget.distanceTo(lookAt);
+    const extentX = mix(3.3, 3.98, gardenReveal);
+    const minZ = mix(-2.45, -3.3, gardenReveal);
+    const maxZ = mix(2.45, 3.4, gardenReveal);
+    for (const x of [-extentX, extentX]) for (const y of [-0.27, 3.12 + worryShow * 0.26]) for (const z of [minZ, maxZ]) {
+      framingPoint.set(x, y, z).sub(lookAt);
+      const depth = framingPoint.dot(viewDirection);
+      requiredDistance = Math.max(requiredDistance, depth + Math.abs(framingPoint.dot(viewRight)) / horizontalTan, depth + Math.abs(framingPoint.dot(viewUp)) / verticalTan);
+    }
+    cameraTarget.copy(lookAt).addScaledVector(viewDirection, requiredDistance);
     camera.position.copy(cameraTarget);
     camera.lookAt(lookAt);
     renderer.render(scene, camera);

@@ -15,3 +15,39 @@ dialog{border:1px solid #d5dacd;border-radius:18px;padding:40px;background:var(-
 @media(max-width:760px){.film-visual{pointer-events:auto;touch-action:pan-y}:root{scroll-padding-top:calc(94px + 36svh);scroll-padding-bottom:75px}}
 @media(max-height:650px) and (max-width:760px){:root{scroll-padding-top:calc(81px + 29svh);scroll-padding-bottom:65px}}
 @media(prefers-reduced-motion:reduce){:root{scroll-behavior:auto}*,*:before,*:after{animation-duration:.01ms!important;transition-duration:.01ms!important;animation-iteration-count:1!important}}
+
+/* The text and WebGL viewport have separate, non-overlapping layout bounds. */
+:root{--header-height:104px;--controls-height:83px;scrollbar-gutter:stable}
+.site-header{height:var(--header-height)}
+.film-controls{height:var(--controls-height)}
+@media(min-width:761px){
+  .film-visual{inset:var(--header-height) 2.5% var(--controls-height) 45.5%;width:auto;height:auto}
+  .scene-wrap{inset:30px 0 65px;width:auto;height:auto}
+  .film-frame-label{top:0;right:6%}
+  .scene-caption{left:50%;bottom:14px;max-width:95%;white-space:normal;text-align:center}
+}
+@media(min-width:761px) and (max-width:1100px){.chapter-copy{width:37%}.chapter-readout{min-width:0}}
+@media(max-width:1000px){
+  .desktop-nav{display:none}
+  .header-cta{margin-left:auto}
+  .menu-toggle{display:flex;flex-direction:column;justify-content:center;gap:6px;width:29px;height:37px;background:transparent;padding:4px;flex-shrink:0}
+  .menu-toggle span{height:1px;width:21px;background:var(--ink);transition:transform .2s}
+  .menu-toggle[aria-expanded=true] span:first-child{transform:translateY(3.5px) rotate(45deg)}
+  .menu-toggle[aria-expanded=true] span:last-child{transform:translateY(-3.5px) rotate(-45deg)}
+  .mobile-menu{display:flex;flex-direction:column;gap:20px;position:absolute;top:calc(var(--header-height) - 5px);left:4%;right:4%;padding:25px;background:var(--paper);border:1px solid var(--line);border-radius:13px;opacity:0;visibility:hidden;transform:translateY(-8px);transition:opacity .2s,transform .2s,visibility .2s;box-shadow:0 20px 35px #263e3510}
+  .mobile-menu.is-open{opacity:1;visibility:visible;transform:none}
+  .mobile-menu>a{font-size:15px}
+  .mobile-menu .button{background:var(--ink);color:white;font-size:12px}
+}
+@media(max-width:760px){
+  :root{--header-height:78px;--controls-height:58px}
+  .film-visual{inset:0 0 auto;width:auto;height:calc(var(--header-height) + 36svh)}
+  .scene-wrap{inset:calc(var(--header-height) + 14px) 8px 36px;width:auto;height:auto}
+  .film-frame-label{top:calc(var(--header-height) + 2px);left:16px;right:auto}
+  .scene-caption{bottom:8px}
+  .chapter-nav{gap:0}
+  .chapter-nav button{width:14px}
+  #chapter-title{max-width:108px}
+}
+@media(max-height:650px) and (min-width:761px){:root{--header-height:82px;--controls-height:67px}}
+@media(max-height:650px) and (max-width:760px){:root{--header-height:65px;--controls-height:48px}.film-visual{height:calc(var(--header-height) + 36svh)}.scene-wrap{inset:calc(var(--header-height) + 3px) 8px 26px}.narrative{padding-top:calc(var(--header-height) + 36svh)}}

@@ -22,14 +22,16 @@ try { motionPreference = localStorage.getItem('tishe-calm'); } catch {}
 let reducedMotion = motionPreference === null ? systemMotion.matches : motionPreference === 'true';
 let room;
 let activeChapter = -1;
-let chapterCenters = [];
 let chapterStarts = [];
+let chapterSpans = [];
 let readLine = innerHeight / 2;
 let lastRender = 0;
 let targetProgress = 0;
 let scrollQueued = false;
+let animationTime = 0;
 const progressState = { value: 0 };
 const pointer = { x: 0, y: 0 };
+const pointerTarget = { x: 0, y: 0 };
 const chapterButtons = $$('.chapter-nav button');
 const captions = ['Можно просто прийти.', 'У меня столько всего внутри…', 'Спасибо. Я попробую начать.', 'Я рядом. И я вас слышу.', 'Мне важно об этом рассказать.', 'Сейчас можно никуда не спешить.', 'Мы можем быть на связи.', 'Это время — только для вас.', 'Можно задать ещё один вопрос?', 'Моя история продолжается.'];
 const places = ['Кабинет. Начало истории.', 'Первые шаги. Немного волнения.', 'Два кресла. Место для вас.', 'Знакомство. Ваш психолог.', 'Разговор. По одной ниточке.', 'Тишина. Немного воздуха.', 'Онлайн. Через расстояния.', '50 минут. В вашем темпе.', 'Новая перспектива. Больше ясности.', 'Сад. Ваша история дальше.'];
@@ -48,13 +50,20 @@ function updateChapter(index) {
   gsap.to(root,{ '--film-bg':tones[index], duration:reducedMotion ? 0 : 1.2, overwrite:true });
 }
 
+function storyProgress(readingPosition, index, chapterStart, chapterSpan, endPosition, count) {
+  const span = index === count - 1 ? Math.max(1, 2 * (endPosition - chapterStart)) : Math.max(1, chapterSpan);
+  const local = Math.max(0, Math.min(1, (readingPosition - chapterStart) / span));
+  return Math.max(0, Math.min(1, (index + local - 0.5) / (count - 1)));
+}
+
 function measureChapters() {
   const mobile = innerWidth <= 760;
   const visualBottom = $('.film-visual').getBoundingClientRect().bottom;
   readLine = mobile ? visualBottom + Math.max(0,innerHeight - visualBottom - $('.film-controls').offsetHeight) * 0.48 : innerHeight * 0.5;
-  chapterCenters = chapters.map(chapter => {
+  chapterSpans = chapters.map(chapter => {
     const rect = chapter.getBoundingClientRect();
-    return rect.top + scrollY + rect.height / 2;
+    // A long answer may add reading space, but must not retime the whole film.
+    return Math.min(rect.height, mobile ? innerHeight - visualBottom : innerHeight);
   });
   chapterStarts = chapters.map(chapter => chapter.getBoundingClientRect().top + scrollY);
   updateScroll();
@@ -62,25 +71,22 @@ function measureChapters() {
 
 function updateScroll() {
   scrollQueued = false;
-  if (!chapterCenters.length) return;
+  if (!chapterStarts.length) return;
   const readingPosition = scrollY + readLine;
-  let interval = 0;
-  while(interval < chapterCenters.length - 2 && readingPosition > chapterCenters[interval + 1]) interval++;
-  const span = chapterCenters[interval + 1] - chapterCenters[interval];
-  const local = Math.max(0,Math.min(1,(readingPosition - chapterCenters[interval]) / span));
-  targetProgress = (interval + local) / (chapters.length - 1);
-  if (scrollY <= 1) targetProgress = 0;
-  if (scrollY >= document.documentElement.scrollHeight - innerHeight - 2) targetProgress = 1;
   const index = chapterStarts.reduce((current,start,i)=>readingPosition>=start?i:current,0);
+  const endPosition = document.documentElement.scrollHeight - innerHeight + readLine;
+  targetProgress = storyProgress(readingPosition,index,chapterStarts[index],chapterSpans[index],endPosition,chapters.length);
+  if (scrollY <= 1) targetProgress = 0;
   updateChapter(index);
   $('.film-progress span').style.transform = `scaleX(${targetProgress})`;
   if (reducedMotion) progressState.value = targetProgress;
 }
 
 function goToChapter(index) {
+  measureChapters();
   const target = Math.max(0,Math.min(chapters.length - 1,index));
   const mobileTop = chapterStarts[target] - $('.film-visual').getBoundingClientRect().bottom + 12;
-  const top = target === 0 ? 0 : innerWidth <= 760 ? mobileTop : chapterCenters[target] - readLine;
+  const top = target === 0 ? 0 : innerWidth <= 760 ? mobileTop : chapterStarts[target] + chapterSpans[target] / 2 - readLine;
   window.scrollTo({top,behavior:reducedMotion?'instant':'smooth'});
   history.replaceState(null,'',`#${chapters[target].id}`);
   chapters[target].tabIndex = -1;
@@ -129,18 +135,21 @@ const sceneFallback=()=>{sceneWrap.classList.add('is-ready');$('.scene-fallback'
 import('./room.js').then(({createRoom})=>{
   room=createRoom($('#room-canvas'),{reducedMotion,onReady:()=>{sceneWrap.classList.add('is-ready');$('.scene-loading').setAttribute('aria-hidden','true');},onError:sceneFallback});
   if(!room)return;
-  const resize=()=>room.resize(sceneWrap.clientWidth,sceneWrap.clientHeight);
+  const resize=()=>{room.resize(sceneWrap.clientWidth,sceneWrap.clientHeight);room.update(progressState.value,animationTime,pointer);};
   new ResizeObserver(resize).observe(sceneWrap);resize();
   gsap.ticker.add((time,delta)=>{
     if(document.hidden)return;
     const smoothing=1-Math.exp(-Math.min(delta,64)/180);
+    if(!reducedMotion)animationTime+=Math.min(delta,64)/1000;
+    pointer.x+=(pointerTarget.x-pointer.x)*smoothing;
+    pointer.y+=(pointerTarget.y-pointer.y)*smoothing;
     progressState.value=reducedMotion?targetProgress:progressState.value+(targetProgress-progressState.value)*smoothing;
     if(time-lastRender<1/40)return;
     lastRender=time;
-    room.update(progressState.value,reducedMotion?0:time,reducedMotion?{x:0,y:0}:pointer);
+    room.update(progressState.value,animationTime,reducedMotion?{x:0,y:0}:pointer);
   });
 }).catch(error=>{console.error('The film could not load:',error);sceneFallback();});
-window.addEventListener('pointermove',event=>{pointer.x=(event.clientX/innerWidth-.5)*2;pointer.y=(event.clientY/innerHeight-.5)*2;},{passive:true});
+window.addEventListener('pointermove',event=>{pointerTarget.x=(event.clientX/innerWidth-.5)*2;pointerTarget.y=(event.clientY/innerHeight-.5)*2;},{passive:true});
 measureChapters();
 window.addEventListener('load',()=>{measureChapters();const initial=chapters.findIndex(ch=>`#${ch.id}`===location.hash);if(initial>0)goToChapter(initial);},{once:true});
 
