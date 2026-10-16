@@ -1,6 +1,39 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 
+// A shared, seamless 20-second exchange: telling, listening, answering, settling.
+// Sampling the same clock keeps reactions connected and makes reverse scroll safe.
+export function sampleConversation(time) {
+  const phase = ((time % 20) + 20) % 20;
+  const ease = (a, b, x) => THREE.MathUtils.smoothstep(x, a, b);
+  const beat = (start, end, fade = 0.45) => ease(start, start + fade, phase) * (1 - ease(end - fade, end, phase));
+  const first = beat(1.2, 6.0, 0.55);
+  const second = beat(8.0, 11.8, 0.55);
+  const reply = beat(12.9, 16.1, 0.55);
+  return {
+    clientSpeech: first + second,
+    therapistSpeech: reply,
+    rightHand: beat(0.75, 6.3, 0.7) * (0.76 + 0.18 * Math.sin(phase * 1.35)) + beat(7.7, 12.2, 0.65) * 0.4,
+    leftHand: beat(7.35, 12.2, 0.75) * (0.7 + 0.14 * Math.sin(phase * 1.1 + 0.8)),
+    emphasis: beat(3.1, 4.1, 0.38) * 0.75 + beat(9.4, 10.45, 0.4),
+    hesitation: beat(0.05, 1.65, 0.45) + beat(6.45, 7.8, 0.4) * 0.55,
+    nod: beat(5.95, 6.75, 0.34) * 0.75 + beat(6.9, 7.65, 0.32) * 0.45 + beat(11.9, 12.65, 0.32) * 0.8,
+    replyHand: beat(12.35, 16.55, 0.8),
+    acknowledge: beat(16.4, 17.3, 0.38) + beat(17.5, 18.25, 0.32) * 0.55,
+    warmth: beat(12.1, 19.7, 1.0),
+    syllable: Math.pow(Math.max(0, Math.sin(phase * 11.3)), 1.3) * (0.45 + 0.55 * Math.pow(Math.sin(phase * 7.7 + 0.4), 2)),
+  };
+}
+
+function blinkAt(time, offset) {
+  const phase = ((time + offset) % 23.4 + 23.4) % 23.4;
+  let blink = 0;
+  for (const center of [1.8, 5.7, 6.06, 11.35, 17.8, 22.9]) {
+    blink = Math.max(blink, THREE.MathUtils.smoothstep(phase, center - 0.09, center) * (1 - THREE.MathUtils.smoothstep(phase, center + 0.035, center + 0.18)));
+  }
+  return blink;
+}
+
 // A tiny film set. Every prop and character is modelled here, with no downloaded assets.
 export function createRoom(canvas, { onReady, onError, reducedMotion = false } = {}) {
   let renderer;
@@ -267,17 +300,39 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     head.position.set(0, 0.64, 0.018);
     torso.add(head);
     sphere(0.235, skin, head, [0, 0.205, 0], [0.9, 1.17, 0.9]);
+    const eyes = [], brows = [];
     for (const side of [-1, 1]) {
       sphere(0.048, skin, head, [side * 0.207, 0.205, 0], [0.7, 1.12, 0.65]);
-      sphere(0.036, M.white, head, [side * 0.075, 0.235, 0.205], [0.91, 1, 0.42]);
-      sphere(0.018, M.ink, head, [side * 0.075, 0.232, 0.221], [0.85, 1, 0.45]);
-      sphere(0.005, M.white, head, [side * 0.075 - 0.004, 0.24, 0.229]);
+      const socket = new THREE.Group();
+      socket.position.set(side * 0.075, 0.235, 0.205);
+      head.add(socket);
+      const opening = new THREE.Group();
+      socket.add(opening);
+      sphere(0.036, M.white, opening, [0, 0, 0], [0.91, 1, 0.42]);
+      const pupil = new THREE.Group();
+      opening.add(pupil);
+      sphere(0.018, M.ink, pupil, [0, -0.003, 0.016], [0.85, 1, 0.45]);
+      sphere(0.005, M.white, pupil, [-0.004, 0.005, 0.024]);
+      const lid = tube([[-0.026,0,0.018],[0,-0.003,0.023],[0.026,0,0.018]], 0.004, hair, socket);
+      lid.visible = false;
+      eyes.push({ opening, pupil, lid });
       const brow = capsule(0.063, 0.009, hair, head, [side * 0.077, 0.291, 0.199]);
       brow.rotation.z = Math.PI / 2 - side * 0.1;
+      brows.push(brow);
       sphere(0.034, mat(0xd68d76), head, [side * 0.119, 0.156, 0.178], [1, 0.47, 0.15]);
     }
     sphere(0.046, skin, head, [0, 0.181, 0.216], [0.7, 0.95, 0.83]);
-    tube([[-0.044, 0.105, 0.195], [0, 0.094, 0.211], [0.044, 0.106, 0.195]], 0.006, mat(0xa26d58), head);
+    const mouthCurve = points => new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points.map(p => new THREE.Vector3(...p))), 24, 0.006, 6, false);
+    const mouthGeometry = mouthCurve([[-0.046,0.116,0.199],[0,0.112,0.218],[0.046,0.116,0.199]]);
+    const mouthTargets = [
+      mouthCurve([[-0.046,0.102,0.199],[0,0.124,0.218],[0.046,0.102,0.199]]),
+      mouthCurve([[-0.049,0.136,0.199],[0,0.102,0.218],[0.049,0.136,0.199]]),
+    ];
+    mouthGeometry.morphAttributes.position = mouthTargets.map(g => g.attributes.position);
+    mouthGeometry.morphAttributes.normal = mouthTargets.map(g => g.attributes.normal);
+    const mouth = mesh(mouthGeometry, mat(0xa26d58), head);
+    mouthTargets.forEach(g => g.dispose());
+    const mouthOpening = sphere(0.042, mat(0x80503e), head, [0,0.11,0.219], [0.85,0.035,0.18]);
     const hairCap = mesh(new THREE.SphereGeometry(0.236, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.43), hair, head, [0, 0.234, -0.012]);
     hairCap.scale.set(0.96, 1.12, 0.95);
     sphere(0.16, hair, head, [0, 0.28, -0.127], [1.1, 0.97, 0.55]);
@@ -307,9 +362,12 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       elbow.position.y = -0.266;
       shoulder.add(elbow);
       capsule(0.24, 0.057, therapist ? shirt : skin, elbow, [0, -0.093, 0]);
-      sphere(0.068, skin, elbow, [0, -0.213, 0], [0.81, 1.12, 0.72]);
-      sphere(0.025, skin, elbow, [side * 0.046, -0.193, 0.021], [0.8, 1.3, 0.8]);
-      arms.push({ shoulder, elbow });
+      const wrist = new THREE.Group();
+      wrist.position.set(0, -0.213, 0);
+      elbow.add(wrist);
+      const palm = sphere(0.068, skin, wrist, [0, 0, 0], [0.81, 1.12, 0.72]);
+      sphere(0.025, skin, wrist, [side * 0.046, 0.02, 0.021], [0.8, 1.3, 0.8]);
+      arms.push({ shoulder, elbow, wrist, palm });
       const hip = new THREE.Group();
       hip.position.set(side * 0.108, 0.02, 0);
       rig.add(hip);
@@ -322,7 +380,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       box(0.158, 0.025, 0.286, therapist ? M.hair : M.sand, knee, [0, -0.636, 0.069], 0.01);
       legs.push({ hip, knee });
     }
-    return { rig, torso, head, arms, legs };
+    return { rig, torso, head, arms, legs, face: { eyes, brows, mouth, mouthOpening } };
   }
   const client = person({ shirt: M.terra, pants: M.ivory, hair: M.hair, skin: M.skin });
   const therapist = person({ shirt: M.dark, pants: mat(0xab916d), hair: mat(0x62452c), skin: mat(0xd9a078), therapist: true });
@@ -534,6 +592,27 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       knee.rotation.x = Math.PI / 2 * amount;
     });
   }
+  function express(actor, { worry = 0, warmth = 0, aperture = 0, gazeX = 0, gazeY = 0, blink = 0 }) {
+    const { eyes, brows, mouth, mouthOpening } = actor.face;
+    const total = Math.max(1, worry + warmth);
+    mouth.morphTargetInfluences[0] = worry / total;
+    mouth.morphTargetInfluences[1] = warmth / total;
+    mouth.position.y = aperture * 0.006;
+    mouth.scale.x = 1 - aperture * 0.12;
+    mouthOpening.visible = aperture > 0.015;
+    mouthOpening.scale.set(0.8 + warmth * 0.2 + aperture * 0.15, 0.035 + aperture * 0.72, 0.18);
+    mouthOpening.position.y = 0.11 - aperture * 0.007;
+    eyes.forEach(({opening, pupil, lid}) => {
+      opening.scale.y = 1 - blink * 0.97;
+      pupil.position.set(gazeX, gazeY, 0);
+      lid.visible = blink > 0.85;
+    });
+    brows.forEach((brow, i) => {
+      const side = i === 0 ? -1 : 1;
+      brow.position.y = 0.291 + worry * 0.014 + aperture * 0.008;
+      brow.rotation.z = Math.PI / 2 - side * (0.1 + worry * 0.3 - warmth * 0.08);
+    });
+  }
   function update(progress = 0, time = 0, pointer = { x: 0, y: 0 }) {
     if (disposed) return;
     const p = THREE.MathUtils.clamp(progress, 0, 1);
@@ -556,6 +635,15 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     const leaving = smooth(0.885, 0.976, p);
     const therapistUp = smooth(0.917, 0.966, p);
     const waving = smooth(0.966, 0.991, p);
+    const exchange = sampleConversation(t + p * 6);
+    const heard = sampleConversation(t + p * 6 - 0.24);
+    const clientSpeaking = talking * exchange.clientSpeech;
+    const therapistSpeaking = talking * exchange.therapistSpeech;
+    const attentive = talking * (1 - exchange.therapistSpeech * 0.65);
+    const clientEmphasis = talking * exchange.emphasis;
+    const clientHesitation = talking * exchange.hesitation;
+    const listeningNod = talking * exchange.nod;
+    const clientReply = talking * exchange.acknowledge;
     const entryStrength = smooth(0.026, 0.052, p) * (1 - smooth(0.17, 0.195, p));
     const exitStrength = smooth(0.886, 0.904, p) * (1 - smooth(0.96, 0.98, p));
     const walkStrength = reducedMotion ? 0 : entryStrength + exitStrength;
@@ -575,8 +663,9 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     const seatedYaw = clientSeat.yaw + 0.13;
     const exitYaw = mix(0.26, 0.76, waving);
     client.rig.rotation.y = mix(mix(direction, seatedYaw, smooth(0.16, 0.215, p)), exitYaw, smooth(0.871, 0.905, p));
-    client.torso.rotation.x = Math.sin(sitting * Math.PI) * 0.19 - talking * 0.05 + gettingUp * (1 - gettingUp) * 0.38;
-    client.torso.rotation.z = Math.sin(t * 0.85) * 0.012 * (1 - walkStrength);
+    client.torso.rotation.x = Math.sin(sitting * Math.PI) * 0.19 + clientSpeaking * 0.045 + clientEmphasis * 0.028 + clientHesitation * 0.035 + gettingUp * (1 - gettingUp) * 0.38;
+    client.torso.rotation.y = talking * (exchange.rightHand * 0.035 - exchange.leftHand * 0.025);
+    client.torso.rotation.z = Math.sin(t * 0.85) * 0.008 * (1 - walkStrength) + talking * (exchange.leftHand - exchange.rightHand) * 0.022;
     client.torso.scale.y = 1 + Math.sin(t * 1.4) * (0.008 + breathing * 0.016);
     poseSeated(client, sitting);
     client.legs.forEach(({ hip, knee }, i) => {
@@ -585,44 +674,69 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       knee.rotation.x += Math.max(0, -Math.sin(phase)) * 0.62 * walkStrength;
     });
     plantFeet(client);
-    client.arms.forEach(({ shoulder, elbow }, i) => {
+    client.arms.forEach(({ shoulder, elbow, wrist }, i) => {
       const side = i === 0 ? -1 : 1;
       const phase = step + (i + 1) * Math.PI;
-      shoulder.rotation.x = Math.sin(phase) * 0.34 * walkStrength - sitting * 0.31 - talking * (0.24 + Math.sin(t * 1.9 + i * 2.1) * 0.2) - reassuring * 0.12;
-      shoulder.rotation.z = side * (0.09 + talking * (0.27 + Math.sin(t * 1.4 + i) * 0.12) + welcome * 0.1);
-      elbow.rotation.x = -sitting * 0.92 - talking * (0.2 + Math.sin(t * 2 + i) * 0.28);
-      elbow.rotation.z = side * (talking * 0.14 + breathing * 0.06);
+      const gesture = talking * (i === 1 ? exchange.rightHand : exchange.leftHand);
+      const accent = clientEmphasis * (i === 1 ? 0.7 : 0.35);
+      shoulder.rotation.x = Math.sin(phase) * 0.34 * walkStrength - sitting * 0.34 - gesture * 0.52 - accent * 0.12 - reassuring * 0.1;
+      shoulder.rotation.y = -side * gesture * 0.12;
+      shoulder.rotation.z = side * (0.09 + gesture * 0.31 + accent * 0.075 + welcome * 0.08);
+      // The forearm follows the upper arm; the wrist settles last.
+      elbow.rotation.x = -sitting * 0.96 - gesture * 0.17 - accent * 0.13 + gesture * Math.sin(t * 1.35 - 0.35 + i) * 0.055;
+      elbow.rotation.y = side * gesture * 0.14;
+      elbow.rotation.z = -side * clientHesitation * 0.1 + side * gesture * 0.045;
+      wrist.rotation.set(-gesture * 0.13, side * (gesture * 0.85 + clientHesitation * 0.12), side * (gesture * 0.15 + Math.sin(t * 1.35 - 0.65 + i) * gesture * 0.035));
       if (i === 1) {
         shoulder.rotation.z = mix(shoulder.rotation.z, 2.3 + Math.sin(t * 2.7) * 0.16, waving);
         shoulder.rotation.x = mix(shoulder.rotation.x, -0.15, waving);
         elbow.rotation.x = mix(elbow.rotation.x, -0.55, waving);
         elbow.rotation.z = mix(elbow.rotation.z, 0.22 + Math.sin(t * 3.4) * 0.19, waving);
+        wrist.rotation.z = mix(wrist.rotation.z, Math.sin(t * 3.4 - 0.3) * 0.16, waving);
       }
     });
-    client.head.rotation.set(talking * Math.sin(t * 1.9) * 0.055 + calm * 0.035 - format * 0.045, sitting * 0.16 + talking * Math.sin(t * 1.1) * 0.11 - waving * 0.16, (1 - calm) * -0.045 + talking * Math.sin(t * 1.25) * 0.055);
 
     // Rise through the open front of the rotated chair, not through its armrest.
     therapist.rig.position.set(therapistSeat.x + Math.sin(therapistSeat.yaw) * therapistUp * 0.78, mix(0.68, 1.04, therapistUp), therapistSeat.z + 0.045 + Math.cos(therapistSeat.yaw) * therapistUp * 0.78);
     therapist.rig.rotation.y = mix(therapistSeat.yaw - 0.16, -0.38, therapistUp);
     poseSeated(therapist, 1 - therapistUp);
     plantFeet(therapist);
-    therapist.torso.rotation.x = -0.018 + Math.sin(t * 1.3) * 0.008 + therapistUp * (1 - therapistUp) * 0.4;
+    therapist.torso.rotation.x = -0.018 + Math.sin(t * 1.3 + 0.7) * 0.006 + attentive * 0.06 + listeningNod * 0.016 + therapistUp * (1 - therapistUp) * 0.4;
+    therapist.torso.rotation.y = -attentive * 0.035;
+    therapist.torso.rotation.z = attentive * -0.012;
     therapist.torso.scale.y = 1 + Math.sin(t * 1.25 + 0.4) * 0.007;
-    therapist.head.rotation.set(Math.sin(t * 1.7) * 0.045 * (talking + welcome + reassuring) + introduction * (0.055 + Math.sin(t * 0.75) * 0.07), -0.1 + format * 0.13, 0.055 + introduction * Math.sin(t * 1.2) * 0.02);
-    therapist.arms.forEach(({ shoulder, elbow }, i) => {
+    therapist.arms.forEach(({ shoulder, elbow, wrist }, i) => {
       const side = i === 0 ? -1 : 1;
-      const gesture = i === 0 ? welcome + format * 0.75 + reassuring * 0.75 : introduction + talking * 0.38 + terms * 0.7;
-      shoulder.rotation.x = -0.36 * (1 - therapistUp) - gesture * (0.12 + Math.sin(t * 1.25) * 0.12);
-      shoulder.rotation.z = side * (0.14 + gesture * (0.24 + Math.sin(t * 1.45 + i) * 0.11));
-      elbow.rotation.x = -0.98 * (1 - therapistUp) - gesture * 0.1 + Math.sin(t * 1.4) * 0.08 * talking;
-      elbow.rotation.z = side * (0.14 + gesture * 0.17);
+      const answer = talking * exchange.replyHand * (i === 0 ? 1 : 0.12);
+      const gesture = i === 0 ? welcome * 0.75 + format * 0.7 + reassuring * 0.65 : introduction * 0.7 + terms * 0.55;
+      shoulder.rotation.x = -0.36 * (1 - therapistUp) - gesture * 0.27 - answer * 0.46;
+      shoulder.rotation.y = -side * answer * 0.1;
+      shoulder.rotation.z = side * (0.1 + gesture * 0.22 + answer * 0.24);
+      elbow.rotation.x = -0.98 * (1 - therapistUp) - gesture * 0.12 - answer * 0.18;
+      elbow.rotation.y = side * answer * 0.12;
+      elbow.rotation.z = side * (0.06 + gesture * 0.11 + answer * 0.045);
+      wrist.rotation.set(-answer * 0.11, side * (gesture * 0.55 + answer * 0.85), side * (gesture * 0.1 + answer * 0.13));
       if (i === 0) {
         shoulder.rotation.z = mix(shoulder.rotation.z, -2.18 + Math.sin(t * 2.3 + 0.7) * 0.12, waving);
         shoulder.rotation.x = mix(shoulder.rotation.x, -0.12, waving);
         elbow.rotation.x = mix(elbow.rotation.x, -0.48, waving);
         elbow.rotation.z = mix(elbow.rotation.z, -0.25 + Math.sin(t * 3.1) * 0.15, waving);
+        wrist.rotation.z = mix(wrist.rotation.z, Math.sin(t * 3.1 + 0.4) * 0.14, waving);
       }
     });
+    // Eyes and heads share an attention target, with a brief look down between phrases.
+    const downcast = (1 - calm) * (0.12 + welcome * 0.3) + clientHesitation * 0.6;
+    const clientAim = THREE.MathUtils.clamp(Math.atan2(therapist.rig.position.x - client.rig.position.x, therapist.rig.position.z - client.rig.position.z) - client.rig.rotation.y, -0.62, 0.62);
+    const therapistAim = THREE.MathUtils.clamp(Math.atan2(client.rig.position.x - therapist.rig.position.x, client.rig.position.z - therapist.rig.position.z) - therapist.rig.rotation.y, -0.55, 0.55);
+    const clientAttention = sitting * (1 - downcast * 0.65) * (1 - format * 0.4);
+    const therapistAttention = (1 - therapistUp) * (0.65 + talking * 0.35) * (1 - format * 0.7);
+    client.head.rotation.set(downcast * 0.13 - clientSpeaking * 0.025 + clientReply * 0.11 + calm * 0.025, clientAim * clientAttention - waving * 0.16, -(1 - calm) * 0.035 + talking * (exchange.leftHand - exchange.rightHand) * 0.032);
+    therapist.head.rotation.set(listeningNod * 0.13 + heard.emphasis * attentive * 0.025 + introduction * 0.025, therapistAim * therapistAttention + format * 0.08, 0.025 + attentive * 0.04 + therapistSpeaking * -0.025);
+    const clientWarmth = calm * 0.8 + clientReply * 0.32;
+    const therapistWarmth = 0.25 + welcome * 0.3 + talking * exchange.warmth * 0.38 + calm * 0.22;
+    express(client, { worry: (1 - calm) * (0.34 + clientHesitation * 0.3 + clientEmphasis * 0.2), warmth: clientWarmth, aperture: clientSpeaking * exchange.syllable * 0.85, gazeX: clientAim * clientAttention * 0.016, gazeY: -downcast * 0.01, blink: blinkAt(t, 0) });
+    const guideSpeaking = Math.min(1, therapistSpeaking + introduction * 0.75 + format * 0.55 + terms * 0.5);
+    express(therapist, { worry: attentive * heard.emphasis * 0.15, warmth: therapistWarmth, aperture: guideSpeaking * exchange.syllable * 0.65, gazeX: therapistAim * therapistAttention * 0.016, gazeY: listeningNod * -0.004, blink: blinkAt(t, 1.07) });
     // Reading the notebook is a separate beat; it settles away before standing.
     const notebookShow = 1 - smooth(0.895, 0.935, p);
     notebook.scale.setScalar(Math.max(0.001, notebookShow));

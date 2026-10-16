@@ -15,7 +15,7 @@ source = `class TestRenderer { shadowMap = {}; setPixelRatio(){} setClearColor()
 source = source.replace('return { update, resize, dispose,', 'return { audit: { scene, camera, stage, client, therapist, table, laptop, tissue, cupHandle, architecture, garden, worries, gardenPlants, thoughts, knot }, update, resize, dispose,');
 globalThis.window = { devicePixelRatio: 1 };
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ createRadialGradient: () => ({addColorStop(){}}), fillRect(){} }) }) };
-const { createRoom } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const { createRoom, sampleConversation } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 const mainSource = await readFile(resolve(project,'src/main.js'),'utf8');
 const progressCode = mainSource.match(/function storyProgress\([^]*?\n\}/)?.[0];
 assert.ok(progressCode,'the chapter timing function must be testable independently of page height');
@@ -167,6 +167,83 @@ test('changing the motion preference preserves the current story pose',()=>{
   room.setReducedMotion(true);room.update(.665,0);
   assert.ok(room.audit.client.rig.position.distanceTo(previous)<.01);
   room.setReducedMotion(false);
+});
+
+test('dialogue gives the client room to speak before the therapist responds',()=>{
+  let clientFrames=0,replyFrames=0,nodFrames=0;
+  for(let i=0;i<=2000;i++){
+    const cue=sampleConversation(i/100);
+    assert.ok(cue.clientSpeech*cue.therapistSpeech<1e-8,'both characters speak at once');
+    if(cue.clientSpeech>.5)clientFrames++;
+    if(cue.therapistSpeech>.5)replyFrames++;
+    if(cue.nod>.2&&cue.clientSpeech<.1)nodFrames++;
+  }
+  assert.ok(clientFrames>600&&replyFrames>200&&nodFrames>100,'the exchange lacks a telling, listening or response beat');
+  const before=sampleConversation(20-1e-7),after=sampleConversation(20+1e-7);
+  for(const key of Object.keys(before))if(key!=='syllable')assert.ok(Math.abs(before[key]-after[key])<1e-5,`the dialogue loop jumps in ${key}`);
+});
+
+test('gesturing hands stay clear of heads and torsos throughout the whole exchange',()=>{
+  for(const p of [.28,.36,.445,.49,.65,.77,.85,.99])for(let i=0;i<=200;i++){
+    const time=i/10;room.update(p,time);
+    for(const actor of [room.audit.client,room.audit.therapist])for(const {palm} of actor.arms){
+      palm.geometry.computeBoundingBox();
+      const skull=actor.head.children[0];
+      const palmToSkull=skull.matrixWorld.clone().invert().multiply(palm.matrixWorld);
+      const center=new THREE.Vector3().applyMatrix4(palmToSkull);
+      const handRadius=palm.geometry.parameters.radius*palmToSkull.getMaxScaleOnAxis();
+      assert.ok(center.length()>skull.geometry.parameters.radius+handRadius,`a hand passes through the head at ${p}/${time}`);
+      const shirt=actor.torso.children[0];shirt.geometry.computeBoundingBox();
+      const handInShirt=palm.geometry.boundingBox.clone().applyMatrix4(shirt.matrixWorld.clone().invert().multiply(palm.matrixWorld));
+      assert.equal(handInShirt.intersectsBox(shirt.geometry.boundingBox),false,`a hand passes through the shirt at ${p}/${time}`);
+    }
+  }
+});
+
+test('expressions blink, speak and soften while keeping the eyes on the face',()=>{
+  const apertures=[[],[]],openings=[[],[]];
+  for(let i=0;i<=470;i++){
+    room.update(.445,i*.05);
+    [room.audit.client,room.audit.therapist].forEach((actor,j)=>{
+      apertures[j].push(actor.face.mouthOpening.visible?actor.face.mouthOpening.scale.y:0);
+      openings[j].push(actor.face.eyes[0].opening.scale.y);
+      for(const {opening,pupil} of actor.face.eyes){
+        assert.ok(opening.scale.y>=.029&&opening.scale.y<=1);
+        assert.ok(Math.abs(pupil.position.x)<=.012&&Math.abs(pupil.position.y)<=.011,'a pupil leaves the eye');
+      }
+      const weights=actor.face.mouth.morphTargetInfluences;
+      assert.ok(weights.every(v=>v>=0&&v<=1)&&weights[0]+weights[1]<=1.00001);
+    });
+  }
+  for(let j=0;j<2;j++){
+    assert.ok(Math.min(...openings[j])<.1&&Math.max(...openings[j])>.99,'an actor never blinks');
+    assert.ok(Math.min(...apertures[j])===0&&Math.max(...apertures[j])>.23,'speech has no silent or articulated beat');
+  }
+  room.update(.28,2);const worried=room.audit.client.face.mouth.morphTargetInfluences[0];
+  room.update(.64,2);
+  assert.ok(worried>.2&&room.audit.client.face.mouth.morphTargetInfluences[1]>.6,'the client never relaxes into a smile');
+});
+
+test('characters look at each other and gestures settle without snapping',()=>{
+  const point=new THREE.Vector3(),forward=new THREE.Vector3(),target=new THREE.Vector3();
+  const p=.445;
+  for(const phase of [3,9.5,14]){
+    room.update(p,phase-p*6);
+    for(const [actor,partner] of [[room.audit.client,room.audit.therapist],[room.audit.therapist,room.audit.client]]){
+      actor.head.getWorldPosition(point);partner.head.getWorldPosition(target);
+      target.sub(point).setY(0).normalize();
+      forward.set(0,0,1).transformDirection(actor.head.matrixWorld).setY(0).normalize();
+      assert.ok(forward.dot(target)>.86,'an actor is staring past their partner');
+    }
+  }
+  let previous;
+  for(let i=0;i<=1200;i++){
+    room.update(p,i/60);
+    const current=[];
+    for(const actor of [room.audit.client,room.audit.therapist])for(const joint of [actor.head,actor.torso,...actor.arms.flatMap(a=>[a.shoulder,a.elbow,a.wrist])])current.push(joint.rotation.x,joint.rotation.y,joint.rotation.z);
+    if(previous)current.forEach((v,j)=>assert.ok(Math.abs(v-previous[j])<.045,'a conversational gesture snaps between frames'));
+    previous=current;
+  }
 });
 
 test('expanding questions does not rewind the current scene or change earlier chapter timing',()=>{
