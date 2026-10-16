@@ -25,6 +25,20 @@ export function sampleConversation(time) {
   };
 }
 
+export function sampleCameraShot(progress, time) {
+  const phase = ((time % 20) + 20) % 20;
+  const ease = (a, b, x) => THREE.MathUtils.smootherstep(x, a, b);
+  // Anticipate the listening nod and reply, then return to the client's reaction.
+  const reaction = ease(4, 6, phase) * (1 - ease(6.9, 9, phase));
+  const answer = ease(10.1, 12.2, phase) * (1 - ease(15.9, 18, phase));
+  const therapist = reaction + answer;
+  return {
+    strength: ease(0.375, 0.435, progress) * (1 - ease(0.51, 0.565, progress)),
+    therapist,
+    transition: 4 * therapist * (1 - therapist),
+  };
+}
+
 function blinkAt(time, offset) {
   const phase = ((time + offset) % 23.4 + 23.4) % 23.4;
   let blink = 0;
@@ -554,6 +568,8 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
   const cameraTarget = new THREE.Vector3();
   const lookAt = new THREE.Vector3();
   const nextCamera = new THREE.Vector3();
+  const portraitTarget = new THREE.Vector3();
+  const portraitPosition = new THREE.Vector3();
   const viewDirection = new THREE.Vector3();
   const viewRight = new THREE.Vector3();
   const viewUp = new THREE.Vector3();
@@ -617,6 +633,7 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     if (disposed) return;
     const p = THREE.MathUtils.clamp(progress, 0, 1);
     const t = Number.isFinite(time) ? time : 0;
+    const shot = sampleCameraShot(p, t + p * 6);
     // All staging is a function of scroll, so scrubbing backwards restores the film.
     // Quiet mode still visits every chapter; only continuous movement is stopped.
     const walking = smooth(0.025, 0.19, p);
@@ -748,7 +765,8 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     const unravel = smooth(0.435, 0.605, p);
     const thoughtShow = 1 - smooth(0.69, 0.765, p);
     const worryShow = 1 - unravel * 0.08;
-    thoughts.visible = thoughtShow > 0.001;
+    const thoughtOpacity = thoughtShow * (1 - shot.strength);
+    thoughts.visible = thoughtOpacity > 0.001;
     thoughts.position.copy(client.rig.position);
     thoughts.position.y += 1.76 + Math.sin(t * 0.8) * 0.012;
     thoughts.scale.setScalar(1 + breathing * Math.sin(t * 1.25) * 0.025);
@@ -757,14 +775,14 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
     thoughtStrands.forEach(({strand, from, to}, i) => {
       strand.morphTargetInfluences[0] = smooth(i * 0.09, 0.82 + i * 0.09, unravel);
       strand.material.color.copy(from).lerp(to, unravel);
-      strand.material.opacity = thoughtShow;
-      strand.material.depthWrite = thoughtShow > 0.999;
+      strand.material.opacity = thoughtOpacity;
+      strand.material.depthWrite = thoughtOpacity > 0.999;
     });
-    cloudMaterial.opacity = worryShow * thoughtShow;
+    cloudMaterial.opacity = worryShow * thoughtOpacity;
     worries.visible = thoughtShow > 0.001;
     // Keep an ivory silhouette behind the sprig: room plants must not merge with it.
     const leafGrowth = smooth(0.58, 1, unravel);
-    leafMaterial.opacity = leafGrowth * thoughtShow;
+    leafMaterial.opacity = leafGrowth * thoughtOpacity;
     peace.visible = leafGrowth > 0.001;
     peacefulLeaves.forEach(({leaf, angle}, i) => {
       const growth = smooth(i * 0.035, 0.72 + i * 0.035, leafGrowth);
@@ -832,6 +850,32 @@ export function createRoom(canvas, { onReady, onError, reducedMotion = false } =
       requiredDistance = Math.max(requiredDistance, depth + Math.abs(framingPoint.dot(viewRight)) / horizontalTan, depth + Math.abs(framingPoint.dot(viewUp)) / verticalTan);
     }
     cameraTarget.copy(lookAt).addScaledVector(viewDirection, requiredDistance);
+    if (shot.strength > 0) {
+      // Portraits stay on the open/front side of the room (the same 180° axis).
+      // A shallow pullback on each pan opens a two-shot instead of crossing empty space.
+      const focus = shot.therapist;
+      const travel = shot.transition;
+      const anchorX = mix(client.rig.position.x, therapist.rig.position.x, focus);
+      const anchorY = mix(client.rig.position.y, therapist.rig.position.y, focus);
+      const anchorZ = mix(client.rig.position.z, therapist.rig.position.z, focus);
+      portraitTarget.set(anchorX, anchorY + 0.76, anchorZ + 0.08);
+      viewDirection.set(mix(0.62, -0.62, focus), 0.15, 0.78).normalize();
+      viewRight.crossVectors(upAxis, viewDirection).normalize();
+      viewUp.crossVectors(viewDirection, viewRight).normalize();
+      // Frame the face, chest and full gesture envelope, rather than the entire set.
+      // Fixed bounds prevent the lens from pumping in and out with every hand movement.
+      const halfWidth = 0.68 + travel;
+      const portraitTan = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * 0.87;
+      let portraitDistance = 3.1 + travel * 2.1;
+      for (const x of [anchorX - halfWidth, anchorX + halfWidth]) for (const y of [anchorY + 0.02, anchorY + 1.22]) for (const z of [anchorZ - 0.42, anchorZ + 0.76]) {
+        framingPoint.set(x, y, z).sub(portraitTarget);
+        const depth = framingPoint.dot(viewDirection);
+        portraitDistance = Math.max(portraitDistance, depth + Math.abs(framingPoint.dot(viewRight)) / (portraitTan * camera.aspect), depth + Math.abs(framingPoint.dot(viewUp)) / portraitTan);
+      }
+      portraitPosition.copy(portraitTarget).addScaledVector(viewDirection, portraitDistance);
+      cameraTarget.lerp(portraitPosition, shot.strength);
+      lookAt.lerp(portraitTarget, shot.strength);
+    }
     camera.position.copy(cameraTarget);
     camera.lookAt(lookAt);
     // Keep the drawing readable during camera turns; it never orbits through itself.

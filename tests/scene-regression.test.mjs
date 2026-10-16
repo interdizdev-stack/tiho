@@ -15,7 +15,7 @@ source = `class TestRenderer { shadowMap = {}; setPixelRatio(){} setClearColor()
 source = source.replace('return { update, resize, dispose,', 'return { audit: { scene, camera, stage, client, therapist, table, laptop, tissue, cupHandle, architecture, garden, worries, gardenPlants, thoughts, knot }, update, resize, dispose,');
 globalThis.window = { devicePixelRatio: 1 };
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ({ createRadialGradient: () => ({addColorStop(){}}), fillRect(){} }) }) };
-const { createRoom, sampleConversation } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
+const { createRoom, sampleConversation, sampleCameraShot } = await import(`data:text/javascript;base64,${Buffer.from(source).toString('base64')}`);
 const mainSource = await readFile(resolve(project,'src/main.js'),'utf8');
 const progressCode = mainSource.match(/function storyProgress\([^]*?\n\}/)?.[0];
 assert.ok(progressCode,'the chapter timing function must be testable independently of page height');
@@ -129,12 +129,13 @@ test('garden plants do not move through chairs while the courtyard appears',()=>
   }
 });
 
-test('all visible scenery stays inside the camera on portrait, desktop and short screens', () => {
+test('the full scenery stays inside establishing shots on portrait, desktop and short screens', () => {
   const point = new THREE.Vector3();
   for (const [width,height] of [[400,680],[780,620],[340,200],[1000,420]]) {
     room.resize(width,height);
     for (let i=0;i<=40;i++) {
       const p=i/40; room.update(p,0,{x:1,y:-1});
+      if(sampleCameraShot(p,p*6).strength>0)continue; // Conversation deliberately crops to portraits.
       const camera=room.audit.camera;
       room.audit.stage.traverseVisible(object=>{
         if(!object.geometry)return;
@@ -146,6 +147,60 @@ test('all visible scenery stays inside the camera on portrait, desktop and short
         }
       });
     }
+  }
+});
+
+test('portraits show the face and hands, with both heads visible during the pan',()=>{
+  const point=new THREE.Vector3();
+  const p=.445;
+  for(const [width,height] of [[400,680],[780,620],[340,200],[1000,420]]){
+    room.resize(width,height);
+    for(let i=0;i<=200;i++){
+      const phase=i/10,time=phase-p*6;
+      room.update(p,time);
+      const shot=sampleCameraShot(p,phase);
+      const actors=shot.therapist<.4?[room.audit.client]:shot.therapist>.6?[room.audit.therapist]:[room.audit.client,room.audit.therapist];
+      for(const actor of actors)for(const object of [actor.head,...actor.arms.map(a=>a.palm)]){
+        const box=bounds(object);
+        for(const x of [box.min.x,box.max.x])for(const y of [box.min.y,box.max.y])for(const z of [box.min.z,box.max.z]){
+          point.set(x,y,z).project(room.audit.camera);
+          assert.ok(Math.abs(point.x)<.97&&Math.abs(point.y)<.97,`face/hand cropped in a ${width}x${height} portrait at phase ${phase}: ${point.x},${point.y}`);
+        }
+      }
+      if(shot.therapist===0||shot.therapist===1){
+        const actor=shot.therapist===0?room.audit.client:room.audit.therapist;
+        const box=bounds(actor.head),center=box.getCenter(new THREE.Vector3());
+        const top=new THREE.Vector3(center.x,box.max.y,center.z).project(room.audit.camera);
+        const bottom=new THREE.Vector3(center.x,box.min.y,center.z).project(room.audit.camera);
+        assert.ok((top.y-bottom.y)/2>.13,'the portrait is too distant to show an expression');
+      }
+    }
+  }
+});
+
+test('camera movement is continuous across shot changes, loop seams and reverse scroll',()=>{
+  room.resize(780,620);
+  const p=.445;
+  let previous,previousRotation;
+  for(let i=0;i<=1320;i++){
+    room.update(p,i/60);
+    const camera=room.audit.camera;
+    if(previous){
+      assert.ok(camera.position.distanceTo(previous)<.14,'the camera jumps during a shot change');
+      assert.ok(camera.quaternion.angleTo(previousRotation)<.025,'the camera turns too abruptly');
+    }
+    previous=camera.position.clone();previousRotation=camera.quaternion.clone();
+  }
+  for(const time of [0,3.3,6.5,8,12,14,17,19.9]){
+    for(const progress of [.374,.4,.435,.5,.54,.565,.6]){
+      room.update(progress,time);const expected=room.audit.camera.matrixWorld.clone();
+      room.update(1-progress,time+7);room.update(progress,time);
+      assert.deepEqual(room.audit.camera.matrixWorld.elements,expected.elements,'the camera retains a previous shot after reverse scrolling');
+    }
+    room.update(.375-1e-6,time);const start=room.audit.camera.position.clone();
+    room.update(.375+1e-6,time);assert.ok(room.audit.camera.position.distanceTo(start)<.001);
+    room.update(.565-1e-6,time);const end=room.audit.camera.position.clone();
+    room.update(.565+1e-6,time);assert.ok(room.audit.camera.position.distanceTo(end)<.001);
   }
 });
 
