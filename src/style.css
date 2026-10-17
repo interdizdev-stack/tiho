@@ -21,12 +21,15 @@ dialog{border:1px solid #d5dacd;border-radius:18px;padding:40px;background:var(-
 .site-header{height:var(--header-height)}
 .film-controls{height:var(--controls-height)}
 @media(min-width:761px){
-  .film-visual{inset:var(--header-height) 2.5% var(--controls-height) 45.5%;width:auto;height:auto}
-  .scene-wrap{inset:30px 0 65px;width:auto;height:auto}
+  :root{--copy-left:5.1%;--copy-width:35%;--copy-max:540px;--scene-gap:12px}
+  .chapter-copy{margin-left:var(--copy-left);width:var(--copy-width);max-width:var(--copy-max)}
+  .film-visual{inset:var(--header-height) 1% var(--controls-height) calc(var(--copy-left) + min(var(--copy-width),var(--copy-max)) + var(--scene-gap));width:auto;height:auto}
+  .scene-wrap{inset:14px 0 44px;width:auto;height:auto}
   .film-frame-label{top:0;right:6%}
   .scene-caption{left:50%;bottom:14px;max-width:95%;white-space:normal;text-align:center}
 }
-@media(min-width:761px) and (max-width:1100px){.chapter-copy{width:37%}.chapter-readout{min-width:0}}
+@media(min-width:1700px){:root{--copy-left:8%;--copy-width:34%;--copy-max:570px}}
+@media(min-width:761px) and (max-width:1100px){:root{--copy-width:37%}.chapter-readout{min-width:0}}
 @media(max-width:1000px){
   .desktop-nav{display:none}
   .header-cta{margin-left:auto}
