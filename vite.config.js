@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => {
   }
   const escapeXml = value => value.replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('"', '&quot;');
   return {
+    root: 'site',
+    publicDir: '../public',
+    build: { outDir: '../dist', emptyOutDir: true },
     plugins: [{
       name: 'site-seo',
       transformIndexHtml(html) {
