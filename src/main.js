@@ -160,7 +160,7 @@ const form = $('#contact-form');
 const endpoint = import.meta.env.VITE_CONTACT_ENDPOINT?.trim();
 const demo = !endpoint;
 const messageField = form.elements.message;
-$('#form-disclaimer').textContent = demo ? 'Демо-режим: данные не отправляются и не сохраняются.' : 'Не указывайте здесь медицинские сведения. Подробности обсудим на встрече.';
+$('#form-disclaimer').textContent = demo ? 'Отправка заявок временно недоступна. Данные не отправляются и не сохраняются.' : 'Не указывайте здесь медицинские сведения. Подробности обсудим на встрече.';
 let dialogTrigger;
 function openBooking(trigger, topic = '') {
   dialogTrigger = trigger;
@@ -206,7 +206,7 @@ form.addEventListener('submit', async event => {
     }
     $('.form-view').hidden = true; $('.form-result').hidden = false;
     $('#result-title').innerHTML = demo ? 'Всё готово<br><em>к первому шагу.</em>' : 'Первый шаг<br><em>сделан.</em>';
-    $('#result-description').textContent = demo ? 'Форма проверена. Сейчас это демонстрация: заявка не отправлена, ваши данные нигде не сохранены.' : 'Спасибо за доверие. Ваше обращение отправлено. Свяжемся с вами по указанному контакту, чтобы договориться о встрече.';
+    $('#result-description').textContent = demo ? 'Отправка заявок временно недоступна. Заявка не отправлена, ваши данные не сохранены.' : 'Спасибо за доверие. Ваше обращение отправлено. Свяжемся с вами по указанному контакту, чтобы договориться о встрече.';
     contactDialog.setAttribute('aria-labelledby', 'result-title');
     $('.result-close').focus();
     form.reset();
