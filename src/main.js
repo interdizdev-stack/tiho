@@ -160,7 +160,7 @@ const form = $('#contact-form');
 const endpoint = import.meta.env.VITE_CONTACT_ENDPOINT?.trim();
 const demo = !endpoint;
 const messageField = form.elements.message;
-$('#form-disclaimer').textContent = demo ? 'Отправка заявок временно недоступна. Данные не отправляются и не сохраняются.' : 'Не указывайте здесь медицинские сведения. Подробности обсудим на встрече.';
+$('#form-disclaimer').textContent = demo ? 'Отправка заявок временно недоступна. Данные не сохраняются.' : 'Не указывайте здесь медицинские сведения. Подробности обсудим на встрече.';
 let dialogTrigger;
 function openBooking(trigger, topic = '') {
   dialogTrigger = trigger;

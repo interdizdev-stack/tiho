@@ -54,3 +54,25 @@ dialog{border:1px solid #d5dacd;border-radius:18px;padding:40px;background:var(-
 }
 @media(max-height:650px) and (min-width:761px){:root{--header-height:82px;--controls-height:67px}}
 @media(max-height:650px) and (max-width:760px){:root{--header-height:65px;--controls-height:48px}.film-visual{height:calc(var(--header-height) + 36svh)}.scene-wrap{inset:calc(var(--header-height) + 3px) 8px 26px}.narrative{padding-top:calc(var(--header-height) + 36svh)}}
+
+/* Compact contact form: keep a clear keyboard focus without a heavy outline. */
+.contact-dialog{width:min(560px,calc(100% - 28px));padding:28px 32px}
+.contact-dialog h2{font-size:32px;line-height:1.15;margin:0 36px 20px 0;letter-spacing:-1px}
+.contact-dialog h2 em{font-size:1.08em}
+#contact-form{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}
+#contact-form>label{margin:0;font-size:12px;min-width:0}
+#contact-form>fieldset,#contact-form>label:nth-of-type(n+3),#contact-form>.form-disclaimer,#contact-form>.form-error,#contact-form>.button{grid-column:1/-1}
+#contact-form input:not([type=radio]):not([type=checkbox]),#contact-form textarea{border:1px solid #cbd4c2;border-radius:8px;background:#fffefa;padding:10px 12px;margin-top:6px;font-size:14px;line-height:1.35;transition:border-color .2s,box-shadow .2s}
+#contact-form input:not([type=radio]):not([type=checkbox]):focus-visible,#contact-form textarea:focus-visible{outline:0;border-color:var(--accent);box-shadow:0 0 0 2px #79917242}
+#contact-form textarea{min-height:60px;resize:vertical}
+#contact-form fieldset{margin:0;gap:7px;flex-wrap:wrap}
+#contact-form legend{margin-bottom:7px}
+#contact-form .format-option span{padding:7px 12px}
+#contact-form>.consent{display:flex;align-items:flex-start;gap:9px;font-size:11px;line-height:1.4}
+#contact-form .consent input{margin:1px 0 0}
+#contact-form .form-disclaimer{margin:0;font-size:10px;line-height:1.4}
+#contact-form .form-error{margin:0}
+#contact-form .form-error:empty,#contact-form .form-disclaimer:empty{display:none}
+#contact-form>.button{min-height:44px;padding:11px 20px}
+@media(max-width:600px){.contact-dialog{padding:24px 20px}.contact-dialog h2{font-size:29px;margin-bottom:16px}#contact-form{gap:10px 12px}#contact-form input:not([type=radio]):not([type=checkbox]),#contact-form textarea{font-size:16px;padding:8px 10px}#contact-form .format-option span{padding:7px 10px}}
+@media(max-width:370px){#contact-form{grid-template-columns:1fr}#contact-form>label{grid-column:1/-1}}
